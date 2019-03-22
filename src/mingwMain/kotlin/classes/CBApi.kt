@@ -1,5 +1,10 @@
 package classes
 
+import kotlinx.cinterop.*
+import kwinhelp.*
+import platform.windows.CloseHandle
+import platform.windows.OpenProcess
+
 
 /**
  * Interface for Labryz to use 👍
@@ -39,8 +44,9 @@ interface ClashBountyApi {
 }
 
 
+
 /**
- * Class object produced by [ClashBountyApi]
+ * Class object produced by [XrdClashBountyApi]
  */
 class PlayerData(val displayName: String, val steamUserId: Int) {
 
@@ -86,4 +92,3 @@ object Character {
     const val AN: Byte = 0x18
 
 }
-

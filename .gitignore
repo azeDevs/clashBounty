@@ -1,12 +1,5 @@
 # This project
 .gradle
 .idea
-/data/
-/keys/
 build
-out
-logs.txt
-settings.gradle
 *.iml
-*.out
-/config.properties

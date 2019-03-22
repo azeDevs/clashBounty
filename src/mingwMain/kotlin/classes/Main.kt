@@ -5,7 +5,7 @@ object Host {
     const val DISPLAY_NAME: String = "noname"
 }
 
-fun main() {
+fun main(args: Array<String>) {
     val session = ClashBountySession()
     println("Starting Clash Bounty Session...")
     session.start()
