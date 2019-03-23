@@ -7,6 +7,6 @@ pluginManagement {
         }
     }
 }
-rootProject.name = 'gearNet'
-includeBuild './src/libs'
-
+rootProject.name = "gearNet"
+includeBuild("./src/libs")
+enableFeaturePreview("GRADLE_METADATA")
