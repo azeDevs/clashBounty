@@ -1,13 +1,10 @@
 package classes
 
+
 object Host {
-    const val STEAM_ID: Int = -1
-    const val DISPLAY_NAME: String = "noname"
+    const val STUB_ClashBountyImpl: Boolean = true
+    const val DISPLAY_NAME: String = "Labryz"
+    const val STEAM_ID: Long = 76561198128284333L
 }
 
-fun main(args: Array<String>) {
-    val session = ClashBountySession()
-    println("Starting Clash Bounty Session...")
-    session.start()
-}
-
+fun main() { ClashBountySession().start() }

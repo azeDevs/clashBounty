@@ -32,7 +32,3 @@ task runProgram {
         }
     }
 }
-
-task rapper(type: Wrapper) {
-    gradleVersion = '5.2.1'
-}

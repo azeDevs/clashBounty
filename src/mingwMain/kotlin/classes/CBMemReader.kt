@@ -2,12 +2,7 @@ package classes
 
 import kotlinx.cinterop.*
 import kwinhelp.*
-import kotlin.collections.ArrayList
-import platform.windows.CloseHandle
-import platform.windows.OpenProcess
-import platform.windows.ReadProcessMemory
-import platform.windows.VirtualQueryEx
-import platform.windows.MEMORY_BASIC_INFORMATION
+import platform.windows.*
 
 class ClashBountyImpl : ClashBountyApi {
 

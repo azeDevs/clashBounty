@@ -1,9 +1,13 @@
 package classes
 
-class XrdDataManager {
-    val xrd: XrdMemoryExtractorStub = XrdMemoryExtractorStub()
+import classes.Host.STUB_ClashBountyImpl
 
-    // TODO: Make this loop frequently until finished or timed out
+class XrdDataManager {
+    val xrd: ClashBountyApi = getImpl()
+    private fun getImpl(): ClashBountyApi {
+        if (STUB_ClashBountyImpl) return ClashBountyImplStub() else return ClashBountyImpl()
+    }
+
     fun connect() {
         if (!xrd.isXrdRunning()) println("Xrd process is not running")
         else if (!xrd.isXrdConnected()) xrd.connectToXrd(Host.STEAM_ID, Host.DISPLAY_NAME)
