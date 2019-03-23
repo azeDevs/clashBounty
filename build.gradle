@@ -33,6 +33,6 @@ task runProgram {
     }
 }
 
-task wrapper(type: Wrapper) {
+task rapper(type: Wrapper) {
     gradleVersion = '5.2.1'
 }
