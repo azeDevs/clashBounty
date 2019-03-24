@@ -1,12 +1,11 @@
-package classes.cbmodel
+package classes.session
 
-import classes.cbmodel.LobbyStatus.IN_LOBBY
-import classes.cbmodel.LobbyStatus.IN_MATCH
-import classes.cbmodel.LobbyStatus.NONE
-import classes.cbmodel.LobbyStatus.READYING
 import classes.output.logInfo
+import classes.session.LobbyStatus.IN_LOBBY
+import classes.session.LobbyStatus.IN_MATCH
+import classes.session.LobbyStatus.NONE
+import classes.session.LobbyStatus.READYING
 import kotlin.collections.Map.Entry
-
 
 
 class ClashBountySession {
@@ -21,7 +20,7 @@ class ClashBountySession {
         xrd.connect()
     }
 
-    // TODO: Make this loop once xrd.isConnected()
+    // TODO: Make this loop once xrdApi.isConnected()
     private fun refreshData() {
         var updatedData: Map<Int, Player> = xrd.getData()
         initProcessPlayers(updatedData)
