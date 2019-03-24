@@ -1,4 +1,4 @@
-package classes
+package classes.cbmodel
 
 
 /**
@@ -19,7 +19,7 @@ interface ClashBountyApi {
      * @param displayName the Display Name for the lobby host
      * @return a scan for the Xrd lobby memory addresses is currently in progress
      */
-    fun connectToXrd(steamUserId: Long, displayName: String): Boolean
+    fun connectToXrd(): Boolean
 
     /**
      * Check if Xrd lobby memory addresses have been located

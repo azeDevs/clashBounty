@@ -1,10 +1,13 @@
-package classes
+package classes.cbmodel
 
-import classes.LobbyStatus.IN_LOBBY
-import classes.LobbyStatus.IN_MATCH
-import classes.LobbyStatus.NONE
-import classes.LobbyStatus.READYING
+import classes.cbmodel.LobbyStatus.IN_LOBBY
+import classes.cbmodel.LobbyStatus.IN_MATCH
+import classes.cbmodel.LobbyStatus.NONE
+import classes.cbmodel.LobbyStatus.READYING
+import classes.output.logInfo
 import kotlin.collections.Map.Entry
+
+
 
 class ClashBountySession {
     val xrd: XrdDataManager = XrdDataManager()
@@ -14,7 +17,7 @@ class ClashBountySession {
 
     // TODO: Make this initiate the session's game loop
     fun start() {
-        println("Starting Clash Bounty Session...")
+        logInfo("Starting Clash Bounty Session...")
         xrd.connect()
     }
 

@@ -1,6 +1,9 @@
-package classes
+package classes.cbmodel
 
+import classes.ClashBountyImpl
+import classes.ClashBountyImplStub
 import classes.Host.STUB_ClashBountyImpl
+import classes.output.logInfo
 
 class XrdDataManager {
     val xrd: ClashBountyApi = getImpl()
@@ -9,16 +12,16 @@ class XrdDataManager {
     }
 
     fun connect() {
-        if (!xrd.isXrdRunning()) println("Xrd process is not running")
-        else if (!xrd.isXrdConnected()) xrd.connectToXrd(Host.STEAM_ID, Host.DISPLAY_NAME)
-        else println("Xrd process is already connected")
+        if (!xrd.isXrdRunning()) logInfo("Xrd process is not running")
+        else if (!xrd.isXrdConnected()) xrd.connectToXrd()
+        else logInfo("Xrd process is already connected")
     }
 
     fun getData(): Map<Int, Player> {
         var updatedData: MutableMap<Int, Player> = HashMap()
         if (xrd.isXrdConnected()) xrd.getXrdData().forEach {
                 data -> updatedData.put(data.steamUserId, Player(data))
-        } else println("Xrd process is not yet connected")
+        } else logInfo("Xrd process is not yet connected")
         return updatedData
     }
 
