@@ -2,12 +2,13 @@ package classes.session
 
 import classes.getCBImpl
 import classes.output.logInfo
+import classes.output.logWarn
 
 class XrdDataManager {
     val xrdApi: ClashBountyApi = getCBImpl()
 
     fun connect() {
-        if (!xrdApi.isXrdRunning()) logInfo("Xrd process is not running")
+        if (!xrdApi.isXrdRunning()) logWarn("Xrd process is not running")
         else if (!xrdApi.isXrdConnected()) xrdApi.connectToXrd()
         else logInfo("Xrd process is already connected")
     }
@@ -16,7 +17,7 @@ class XrdDataManager {
         var updatedData: MutableMap<Int, Player> = HashMap()
         if (xrdApi.isXrdConnected()) xrdApi.getXrdData().forEach {
                 data -> updatedData.put(data.steamUserId, Player(data))
-        } else logInfo("Xrd process is not yet connected")
+        } else logWarn("Xrd process is not yet connected")
         return updatedData
     }
 

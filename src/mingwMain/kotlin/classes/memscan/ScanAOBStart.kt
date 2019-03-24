@@ -2,14 +2,15 @@ package classes.memscan
 
 import classes.memscan.LowLevelMutables.currentAddr
 import classes.memscan.LowLevelMutables.meminfobuffer
-import kotlinx.cinterop.*
-import platform.windows.MEMORY_BASIC_INFORMATION
-import platform.windows.VirtualQueryEx
+import kotlinx.cinterop.CPointed
+import kotlinx.cinterop.CPointer
+import kotlinx.cinterop.toCPointer
+import kotlinx.cinterop.toLong
 
 
 fun getAOB(aob: ByteArray, pHandle: CPointer<out CPointed>?): CPointer<out CPointed>? {
     var locatedAddr: CPointer<out CPointed>? = null
-    var inforeturned = VirtualQueryEx(pHandle, currentAddr, meminfobuffer, sizeOf<MEMORY_BASIC_INFORMATION>().toULong())
+//    var inforeturned = VirtualQueryEx(pHandle, currentAddr, meminfobuffer, sizeOf<MEMORY_BASIC_INFORMATION>().toULong())
     currentAddr = (meminfobuffer.BaseAddress.toLong() + meminfobuffer.RegionSize.toLong()).toCPointer()
     if(isMemAccessible()) locatedAddr = scanBytes(aob, pHandle)
     return locatedAddr

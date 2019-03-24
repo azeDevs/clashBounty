@@ -1,8 +1,7 @@
 package classes
 
 import classes.memscan.ClashBountyImplStub
-import classes.output.displayDialog
-import classes.output.writeOut
+import classes.output.pressEnterToExit
 import classes.session.ClashBountyApi
 import classes.session.ClashBountySession
 
@@ -15,10 +14,11 @@ object Host {
 fun getCBImpl(): ClashBountyApi = ClashBountyImplStub()
 
 fun main() {
-    writeOut("Some text to be written...\nBOUNTY: $100")
-    displayDialog("Title", "Lorem Ipsum Dolor Sit Amet")
     ClashBountySession().start()
+    pressEnterToExit()
 }
+
+
 
 // TODO: Notes on Kotlin/Native timed coroutine implementation
 //// Declared here to avoid InvalidMutabilityException in native targets.

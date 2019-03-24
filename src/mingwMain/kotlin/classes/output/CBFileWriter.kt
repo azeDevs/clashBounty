@@ -7,20 +7,26 @@ import platform.posix.fopen
 import platform.posix.fprintf
 import kotlin.system.getTimeMillis
 
+private val IC_INFO = "[>]"
+private val IC_WARN = "[?]"
 
 fun writeOut(text: String) {
     writeToTextFile("$text\n", "out")
     logInfo("writeOut()")
 }
 
-fun logInfo(text: String) {
-    writeToTextFile("[] $text\n", "log")
-    print("[] $text\n")
+fun logInfo(text: String) = writeToTextFile(print("$IC_INFO $text\n").toString(), "log")
+fun logWarn(text: String) = writeToTextFile(print("$IC_WARN $text\n").toString(), "log")
+
+fun pressEnterToExit() {
+    print("$IC_INFO Press ↩ to exit... ")
+    readLine()
 }
 
 class LogBool(val text:String, val value:Boolean)
 fun logBool(logBool: LogBool):Boolean {
-    logInfo(logBool.text)
+    if (logBool.value) logInfo(logBool.text)
+    else logWarn(logBool.text)
     return logBool.value
 }
 
