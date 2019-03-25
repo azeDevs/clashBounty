@@ -1,17 +1,21 @@
 package classes.output
 
-import kotlinx.cinterop.*
-import platform.windows.*
+import classes.session.ClashBountySession
+import libui.ktx.*
 
 
-fun displayDialog(title: String, message: String) {
-    val pathText = StringBuilder()
-    memScoped {
-        val buffer = allocArray<UShortVar>(MAX_PATH)
-        GetModuleFileNameW(null, buffer, MAX_PATH)
-        val path: String = buffer.toKString().split("\\").dropLast(1).joinToString("\\")
-        pathText.append("path: $path\n")
+fun displayAppWindow() = appWindow("gearNet: Clash Bounty", 320, 240) {
+    vbox { lateinit var scroll: TextArea
+
+        button("Connect to Guilty Gear Xrd") { action {
+            ClashBountySession().start()
+            scroll.value = consoleLogs.toString().trimMargin()
+        } }
+
+        scroll = textarea { readonly = true; stretchy = true; value = consoleLogs.toString().trimMargin() }
+
+        button("REFRESH") { action { scroll.value = consoleLogs.toString().trimMargin() } }
+
     }
-    MessageBoxW(null, "message:\n$message\n$pathText",
-        title, (MB_OK or MB_ICONASTERISK).convert())
 }
+

@@ -1,9 +1,9 @@
 package classes
 
 import classes.memscan.ClashBountyImplStub
-import classes.output.pressEnterToExit
+import classes.output.displayAppWindow
+import classes.output.logInfo
 import classes.session.ClashBountyApi
-import classes.session.ClashBountySession
 
 
 object Host {
@@ -14,8 +14,8 @@ object Host {
 fun getCBImpl(): ClashBountyApi = ClashBountyImplStub()
 
 fun main() {
-    ClashBountySession().start()
-    pressEnterToExit()
+    logInfo("start")
+    displayAppWindow()
 }
 
 

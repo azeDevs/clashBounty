@@ -9,18 +9,16 @@ import kotlin.system.getTimeMillis
 
 private val IC_INFO = "[>]"
 private val IC_WARN = "[?]"
+var consoleLogs: StringBuilder = StringBuilder()
 
-fun writeOut(text: String) {
-    writeToTextFile("$text\n", "out")
-    logInfo("writeOut()")
+
+fun logInfo(text: String) {
+    writeToTextFile("$IC_INFO $text\n", "log")
+    consoleLogs.append("$IC_INFO $text\n")
 }
-
-fun logInfo(text: String) = writeToTextFile(print("$IC_INFO $text\n").toString(), "log")
-fun logWarn(text: String) = writeToTextFile(print("$IC_WARN $text\n").toString(), "log")
-
-fun pressEnterToExit() {
-    print("$IC_INFO Press ↩ to exit... ")
-    readLine()
+fun logWarn(text: String) {
+    writeToTextFile("$IC_WARN $text\n", "log")
+    consoleLogs.append("$IC_WARN $text\n")
 }
 
 class LogBool(val text:String, val value:Boolean)
@@ -32,7 +30,7 @@ fun logBool(logBool: LogBool):Boolean {
 
 private fun writeToTextFile(text: String, file: String) {
     val fp: CPointer<FILE>? = fopen("${file}.txt" ,"a")
-    fprintf(fp, text)
+    fprintf(fp, "$text")
     fclose(fp)
 }
 
