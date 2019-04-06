@@ -7,10 +7,10 @@ import classes.session.LobbyStatus.NONE
 import classes.session.LobbyStatus.READYING
 import kotlin.collections.Map.Entry
 
+val playersData: MutableMap<Long, Player> = HashMap()
 
 class ClashBountySession {
     val xrd: XrdDataManager = XrdDataManager()
-    val playersData: MutableMap<Int, Player> = HashMap()
     var currentStatus: Byte = NONE
     var pendingStatus: Byte = NONE
 
@@ -22,8 +22,8 @@ class ClashBountySession {
 
     // TODO: Make this loop once xrdApi.isConnected()
     private fun refreshData() {
-        var updatedData: Map<Int, Player> = xrd.getData()
-        initProcessPlayers(updatedData)
+        var updatedData: Map<Long, Player> = xrd.getData()
+        initPlayers(updatedData)
         when (currentStatus) {
             IN_LOBBY -> processLobbyPlayers(updatedData)
             IN_MATCH -> processMatchPlayers(updatedData)
@@ -34,7 +34,7 @@ class ClashBountySession {
     }
 
     // Prepare playersData to be processed
-    private fun initProcessPlayers(updatedData: Map<Int, Player>) {
+    private fun initPlayers(updatedData: Map<Long, Player>) {
         playersData.forEach { player -> if (updatedData.containsKey(player.key))
             player.value.presentInLobby = true
             else player.value.presentInLobby = false }
@@ -43,26 +43,26 @@ class ClashBountySession {
     }
 
     // Check for Δ when on the LOBBY screen
-    private fun processLobbyPlayers(updatedData: Map<Int, Player>) {
+    private fun processLobbyPlayers(updatedData: Map<Long, Player>) {
         updatedData.forEach { player -> if (loadingMatch(player))
             pendingStatus = READYING }
     }
 
     // Check for Δ when on the MATCH screen
-    private fun processMatchPlayers(updatedData: Map<Int, Player>) {
+    private fun processMatchPlayers(updatedData: Map<Long, Player>) {
         updatedData.forEach { player -> if (matchWasWon(player))
             pendingStatus = IN_LOBBY }
     }
 
     // Check for Δ when on the READYING screen
-    private fun processReadyPlayers(updatedData: Map<Int, Player>) {
+    private fun processReadyPlayers(updatedData: Map<Long, Player>) {
         var finishedReadying = true
         updatedData.forEach { player -> if (loadingMatch(player)) finishedReadying = false }
         if (finishedReadying) pendingStatus = IN_MATCH
     }
 
     // Update each players' score based on Δ in updatedData
-    private fun postProcessPlayers(updatedData: Map<Int, Player>) {
+    private fun postProcessPlayers(updatedData: Map<Long, Player>) {
         updatedData.forEach { player ->
             if (matchWasLost(player)) { getCurrentPlayer(player) /* and do stuff */ }
             else if (matchWasWon(player)) { getCurrentPlayer(player) /* and do stuff */ }
@@ -70,10 +70,10 @@ class ClashBountySession {
     }
 
     // Utility functions for code readability
-    private fun matchWasWon(player: Entry<Int, Player>) = player.value.wonMatch(getCurrentPlayer(player))
-    private fun matchWasLost(player: Entry<Int, Player>) = player.value.lostMatch(getCurrentPlayer(player))
-    private fun loadingMatch(player: Entry<Int, Player>) = player.value.isLoading()
-    private fun getCurrentPlayer(player: Entry<Int, Player>) = playersData.get(player.key) ?: player.value
+    private fun matchWasWon(player: Entry<Long, Player>) = player.value.wonMatch(getCurrentPlayer(player))
+    private fun matchWasLost(player: Entry<Long, Player>) = player.value.lostMatch(getCurrentPlayer(player))
+    private fun loadingMatch(player: Entry<Long, Player>) = player.value.isLoading()
+    private fun getCurrentPlayer(player: Entry<Long, Player>) = playersData.get(player.key) ?: player.value
 
 }
 

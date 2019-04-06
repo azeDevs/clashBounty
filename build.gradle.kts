@@ -12,6 +12,7 @@ kotlin {
             implementation(files("src/libs/kwinhelp.klib"))
             implementation(files("src/libs/libui-windows.klib"))
             implementation(files("src/libs/libui-ktx-windows.klib"))
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:1.1.1")
         }
     }
     mingwX64("mingw") {

@@ -13,11 +13,12 @@ var consoleLogs: StringBuilder = StringBuilder()
 
 
 fun logInfo(text: String) {
-    writeToTextFile("$IC_INFO $text\n", "log")
+    writeToTextFile("log", "$IC_INFO $text\n")
     consoleLogs.append("$IC_INFO $text\n")
 }
+
 fun logWarn(text: String) {
-    writeToTextFile("$IC_WARN $text\n", "log")
+    writeToTextFile("log", "$IC_WARN $text\n")
     consoleLogs.append("$IC_WARN $text\n")
 }
 
@@ -28,10 +29,10 @@ fun logBool(logBool: LogBool):Boolean {
     return logBool.value
 }
 
-private fun writeToTextFile(text: String, file: String) {
-    val fp: CPointer<FILE>? = fopen("${file}.txt" ,"a")
-    fprintf(fp, "$text")
-    fclose(fp)
+fun writeToTextFile(file: String, text: String) {
+//    val fp: CPointer<FILE>? = fopen("${file}.txt" ,"a")
+//    fprintf(fp, "$text")
+//    fclose(fp)
 }
 
 private val timeStart = getTimeMillis()
