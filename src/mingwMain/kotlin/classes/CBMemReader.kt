@@ -1,12 +1,14 @@
-
+package classes
 
 import kotlinx.cinterop.*
 import kwinhelp.*
 import platform.windows.*
+import classes.session.*
+import kotlin.math.abs
 
-class ClashBountyImpl  {
+class ClashBountyImpl : ClashBountyApi  {
 
-    fun isXrdRunning() : Boolean {
+    override fun isXrdRunning() : Boolean {
         val procname = "GuiltyGearXrd.exe"
         var snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)
         val pe32size: UInt = sizeOf<PROCESSENTRY32>().toUInt()
@@ -28,7 +30,7 @@ class ClashBountyImpl  {
         CloseHandle(snap)
         return pid != 0u
     }
-    fun connectToXrd(steamUserId: Long, displayName: String) {
+    override fun connectToXrd() : Boolean {
         val procname = "GuiltyGearXrd.exe"
         var snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)
         val pe32size: UInt = sizeOf<PROCESSENTRY32>().toUInt()
@@ -38,7 +40,7 @@ class ClashBountyImpl  {
         var pid : UInt = 0u
         if (Process32First(snap, pe32.ptr) == 0) {
             println("Process32First failed!")
-            return
+            return false
         }
         while (Process32Next(snap, pe32.ptr) != 0) {
             val entryname = pe32.szExeFile.toKString()
@@ -50,31 +52,25 @@ class ClashBountyImpl  {
         CloseHandle(snap)
         if (pid == 0u) {
             println("$procname not open!")
-            return
+            return false
         } else {
             println("$procname has an id of $pid, continuing...")
         }
-        var phandle = OpenProcess(LowLevelConstants.PROC_ALL_ACCESS, 0, pid)
+        phandle = OpenProcess(LowLevelConstants.PROC_ALL_ACCESS, 0, pid)
         if (phandle == null) {
             println("$procname failed to open.")
-            return
+            return false
         } else {
             println("$procname was opened!")
         }
-        var buf = ArrayList<Byte>()
-        var mask : Long = 0xFF
-        for (i in 0..8) {
-            var curr = steamUserId and (mask shl i)
-            curr = (curr shr i)
-            buf.add(curr.toByte())
-        }
-        var infoAddr = getDataAddr(pid, "GuiltyGearXrd.exe", phandle)
+        infoAddr = getDataAddr(pid, "GuiltyGearXrd.exe", phandle)
         if(infoAddr?.toLong() == 0L) {
             println("Failed to find Lobby Data")
-            return
+            return false
         }
         println(infoAddr.toLong().toString(16))
         println("Found Lobby Data Address!")
+        return true
     }
 
     fun getDataAddr(pid : UInt, modulename : String, pHandle : CPointer<out CPointed>?): CPointer<ByteVar>? {
@@ -104,29 +100,58 @@ class ClashBountyImpl  {
         return 0L.toCPointer<ByteVar>()
     }
 
-   fun isXrdConnected(): Boolean {
-        return true
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+   override fun isXrdConnected(): Boolean {
+        return !(infoAddr!!.equals(0L.toCPointer<ByteVar>()))
+   }
+
+    override fun getXrdData(): Set<PlayerData> {
+        if (!isXrdConnected()){
+            return emptySet()
+        }
+        var pDataSet = HashSet<PlayerData>()
+        for(i in 0..8){
+            var pdoffset = (infoAddr.toLong() + (LowLevelConstants.GG_STRUCT_SIZE * i).toLong()).toCPointer<ByteVar>()
+            var buffer = nativeHeap.allocArray<ByteVar>(LowLevelConstants.GG_STRUCT_SIZE)
+            var bytesread = nativeHeap.alloc<ULongVar>()
+            var error = ReadProcessMemory(phandle, pdoffset, buffer, LowLevelConstants.GG_STRUCT_SIZE.toULong(), bytesread.ptr)
+            var bufbytearray = buffer.pointed.readValues<ByteVar>(LowLevelConstants.GG_STRUCT_SIZE).getBytes()
+            println(bufbytearray.joinToString())
+            if(error == 0){
+                println("ReadProcessMemory Failed")
+                return emptySet()
+            } else if (i == 0 && bufbytearray[0xC].toInt() == 0) {
+                println("No lobby data to read, host display name empty")
+                return emptySet()
+            } else if (bufbytearray[0xC].toInt() == 0) {
+                continue
+            }
+            var pd = PlayerData()
+            pd.characterId = bufbytearray[0x36]
+            pd.matchesPlayed = bufbytearray[8]
+            pd.matchesWon = bufbytearray[0xA]
+            pd.loadingPct = bufbytearray[0x40]
+            pDataSet.add(pd)
+        }
+        return pDataSet
     }
 
-    fun getXrdData(): Set<Int> {
-        return emptySet()
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    init{
-        var infoAddr = 0L.toCPointer<ByteVar>()
-    }
+    var infoAddr = 0L.toCPointer<ByteVar>()
+    var phandle : HANDLE? = nativeHeap.alloc<IntVar>().ptr
 }
 
 fun main(args: Array<String>) {
     val cbi = ClashBountyImpl()
-    cbi.connectToXrd(76561198128284333L, "Labryz")
+    val connected = cbi.connectToXrd()
+    if(connected) {
+        var pdset = cbi.getXrdData()
+        println(pdset.isEmpty())
+        for (pd in pdset.iterator()){
+            println("Character ID: 0x" + pd.characterId.toString(16))
+        }
+    }
 }
 
 object LowLevelConstants {
     const val PROC_ALL_ACCESS: UInt = 0x438u
-    const val MEM_READWRITE: UInt = 4u
-    const val MEM_GUARD: UInt = 0x100u
     const val GG_STRUCT_SIZE = 0x48
 }

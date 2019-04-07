@@ -15,8 +15,6 @@ interface ClashBountyApi {
     /**
      * Init scan for Xrd lobby memory addresses, return if connection in progress
      *
-     * @param steamUserId the User ID for the lobby host
-     * @param displayName the Display Name for the lobby host
      * @return a scan for the Xrd lobby memory addresses is currently in progress
      */
     fun connectToXrd(): Boolean
@@ -41,7 +39,7 @@ interface ClashBountyApi {
 /**
  * Class object produced by [XrdClashBountyApi]
  */
-class PlayerData(val displayName: String, val steamUserId: Long) {
+class PlayerData() {
     var characterId: Byte = 0x0
     var matchesPlayed: Byte = 0x0
     var matchesWon: Byte = 0x0
