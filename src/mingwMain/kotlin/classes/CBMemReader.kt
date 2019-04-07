@@ -115,7 +115,6 @@ class ClashBountyImpl : ClashBountyApi  {
             var bytesread = nativeHeap.alloc<ULongVar>()
             var error = ReadProcessMemory(phandle, pdoffset, buffer, LowLevelConstants.GG_STRUCT_SIZE.toULong(), bytesread.ptr)
             var bufbytearray = buffer.pointed.readValues<ByteVar>(LowLevelConstants.GG_STRUCT_SIZE).getBytes()
-            println(bufbytearray.joinToString())
             if(error == 0){
                 println("ReadProcessMemory Failed")
                 return emptySet()
@@ -125,7 +124,12 @@ class ClashBountyImpl : ClashBountyApi  {
             } else if (bufbytearray[0xC].toInt() == 0) {
                 continue
             }
-            var pd = PlayerData()
+            var dispname = bufbytearray.stringFromUtf8(0xC, 0x24).trim('\u0000')
+            var steamid = 0L
+            for(j in 0..7){
+                steamid += bufbytearray[7-j].toLong() shl j
+            }
+            var pd = PlayerData(dispname, steamid)
             pd.characterId = bufbytearray[0x36]
             pd.matchesPlayed = bufbytearray[8]
             pd.matchesWon = bufbytearray[0xA]
@@ -146,6 +150,7 @@ fun main(args: Array<String>) {
         var pdset = cbi.getXrdData()
         println(pdset.isEmpty())
         for (pd in pdset.iterator()){
+            println("Display Name: " + pd.displayName)
             println("Character ID: 0x" + pd.characterId.toString(16))
         }
     }

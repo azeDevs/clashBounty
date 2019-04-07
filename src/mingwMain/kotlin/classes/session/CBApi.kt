@@ -39,7 +39,7 @@ interface ClashBountyApi {
 /**
  * Class object produced by [XrdClashBountyApi]
  */
-class PlayerData() {
+class PlayerData(val displayName : String, val steamUserId : Long) {
     var characterId: Byte = 0x0
     var matchesPlayed: Byte = 0x0
     var matchesWon: Byte = 0x0
