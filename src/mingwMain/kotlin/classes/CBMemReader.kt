@@ -1,12 +1,12 @@
-package classes
+
 
 import kotlinx.cinterop.*
 import kwinhelp.*
 import platform.windows.*
 
-class ClashBountyImpl : ClashBountyApi {
+class ClashBountyImpl  {
 
-    override fun isXrdRunning() : Boolean {
+    fun isXrdRunning() : Boolean {
         val procname = "GuiltyGearXrd.exe"
         var snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)
         val pe32size: UInt = sizeOf<PROCESSENTRY32>().toUInt()
@@ -16,7 +16,7 @@ class ClashBountyImpl : ClashBountyApi {
         var pid: UInt = 0u
         if (Process32First(snap, pe32.ptr) == 0) {
             println("Process32First failed!")
-            return
+            return false
         }
         while (Process32Next(snap, pe32.ptr) != 0) {
             val entryname = pe32.szExeFile.toKString()
@@ -28,14 +28,14 @@ class ClashBountyImpl : ClashBountyApi {
         CloseHandle(snap)
         return pid != 0u
     }
-    override fun connectToXrd(steamUserId: Long, displayName: String) {
+    fun connectToXrd(steamUserId: Long, displayName: String) {
         val procname = "GuiltyGearXrd.exe"
         var snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)
         val pe32size: UInt = sizeOf<PROCESSENTRY32>().toUInt()
         val pe32ptr = nativeHeap.alloc<PROCESSENTRY32>()
-        val pe32: PROCESSENTRY32 = pe32ptr
+        val pe32 : PROCESSENTRY32 = pe32ptr
         pe32.dwSize = pe32size
-        var pid: UInt = 0u
+        var pid : UInt = 0u
         if (Process32First(snap, pe32.ptr) == 0) {
             println("Process32First failed!")
             return
@@ -63,68 +63,59 @@ class ClashBountyImpl : ClashBountyApi {
         }
         var buf = ArrayList<Byte>()
         var mask : Long = 0xFF
-        for (var i = 0; i < 8; i++){
+        for (i in 0..8) {
             var curr = steamUserId and (mask shl i)
-            curr = curr shr i
-            buf.add(curr)
+            curr = (curr shr i)
+            buf.add(curr.toByte())
         }
-        var nameBytes = displayName.padEnd(0x24, '\u0000').toByteArray()
-        buf.addAll(nameBytes)
-        infoAddr = scanForAOB(buf.toArray(), phandle)
-        if(infoAddr.equals(nativeNullPtr)){
-            println("Failed to find AOB")
+        var infoAddr = getDataAddr(pid, "GuiltyGearXrd.exe", phandle)
+        if(infoAddr?.toLong() == 0L) {
+            println("Failed to find Lobby Data")
             return
         }
+        println(infoAddr.toLong().toString(16))
         println("Found Lobby Data Address!")
     }
 
-    fun scanForAOB(aob: ByteArray, pHandle: CPointer<out CPointed>?): CPointer<out CPointed>? {
-        var currentAddr = 0L.toCPointer<IntVar>()
-        var bytesread = nativeHeap.alloc<ULongVar>()
-        var buffer = nativeHeap.allocArray<ByteVar>(0x30)
-        var meminfobuffer = nativeHeap.alloc<PMEMORY_BASIC_INFORMATION>()
-        var inforeturned = VirtualQueryEx(pHandle, currentAddr, meminfobuffer, sizeOf<MEMORY_BASIC_INFORMATION>())
-        while(inforeturned != 0uL){
-            currentAddr = meminfobuffer.BaseAddress.toLong() + meminfobuffer.RegionSize).toCPointer()
-            if(meminfobuffer.Protect and LowLevelConstants.MEM_READWRITE == LowLevelConstants.MEM_READWRITE && meminfobuffer.Protect and LowLevelConstants.MEM_GUARD != LowLevelConstants.MEM_GUARD) {
-                for (val p = meminfobuffer.BaseAddress.reinterpret(); p.toLong() < (meminfobuffer.BaseAddress.toLong() + meminfobuffer.RegionSize); p = (p.toLong() + 4).toCPointer()){
-                    var error = ReadProcessMemory(pHandle, p, buffer, 0x30uL, bytesread)
-                    if(error == 0){
-                        return null
-                    }
-                    if(bytesread.pointed == 0x30) {
-                        var equal = true
-                        for (var i = 0; i < 0x30; i++){
-                            if (aob[i] != buffer[i]) {
-                                equal = false
-                                break
-                            }
-                        }
-                        if (equal) {
-                            println("Result found!")
-                            return p
-                        }
-                    }
-                }
+    fun getDataAddr(pid : UInt, modulename : String, pHandle : CPointer<out CPointed>?): CPointer<ByteVar>? {
+        var mod = nativeHeap.alloc<MODULEENTRY32>()
+        mod.dwSize = sizeOf<MODULEENTRY32>().toUInt()
+        var hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pid)
 
+        while(Module32Next(hSnap, mod.ptr) != 0){
+            val entryname = mod.szModule.toKString()
+            if (modulename.equals(entryname)) {
+                CloseHandle(hSnap)
+                var modbase = mod.modBaseAddr
+                var modlong = modbase.toLong()
+                var modoffset = (modlong + 0x1C25AB4L).toCPointer<ByteVar>()
+                var buffer = nativeHeap.alloc<IntVar>()
+                var bytesread = nativeHeap.alloc<ULongVar>()
+                var error = ReadProcessMemory(pHandle, modoffset, buffer.ptr, 4, bytesread.ptr)
+                if (error == 0){
+                    return 0L.toCPointer<ByteVar>()
+                }
+                var newlptr = buffer.value.toLong()
+                newlptr = newlptr + 0x44CL
+                var newptr = newlptr.toCPointer<ByteVar>()
+                return newptr
             }
-            inforeturned = VirtualQueryEx(pHandle, currentAddr, meminfobuffer, sizeOf<MEMORY_BASIC_INFORMATION>().toULong())
         }
-        return null
+        return 0L.toCPointer<ByteVar>()
     }
 
-    override fun isXrdConnected(): Boolean {
+   fun isXrdConnected(): Boolean {
         return true
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun getXrdData(): Set<PlayerData> {
+    fun getXrdData(): Set<Int> {
         return emptySet()
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     init{
-        var infoAddr = nativeNullPtr
+        var infoAddr = 0L.toCPointer<ByteVar>()
     }
 }
 
