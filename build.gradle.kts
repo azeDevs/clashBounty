@@ -31,6 +31,7 @@ kotlin {
     }
 }
 
+
 fun org.jetbrains.kotlin.gradle.plugin.mpp.Executable.windowsResources(rcFileName: String) {
     val taskName = linkTaskName.replaceFirst("link", "windres")
     val inFile = compilation.defaultSourceSet.resources.sourceDirectories.singleFile.resolve(rcFileName)
