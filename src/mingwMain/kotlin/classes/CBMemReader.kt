@@ -1,6 +1,5 @@
 package classes
 
-import classes.session.*
 import kotlinx.cinterop.*
 import kwinhelp.*
 import platform.windows.CloseHandle
@@ -8,9 +7,7 @@ import platform.windows.HANDLE
 import platform.windows.OpenProcess
 import platform.windows.ReadProcessMemory
 
-class ClashBountyImpl : ClashBountyApi  {
-
-
+class XrdMemReader : XrdApi {
 
     override fun isXrdRunning() : Boolean {
         val procname = "GuiltyGearXrd.exe"
@@ -110,18 +107,18 @@ class ClashBountyImpl : ClashBountyApi  {
     override fun isXrdConnected(): Boolean {
         logFunc("isXrdConnected")
         val connected = (logBool("infoAddr != null", infoAddr != null) &&
-                logBool("infoAddr.equals(CPointer)",  !infoAddr!!.equals(0L.toCPointer<ByteVar>())))
+                logBool("infoAddr.equals(CPointer)", !infoAddr!!.equals(0L.toCPointer<ByteVar>())))
         return logBool("isXrdConnected", connected)
     }
 
-    override fun getXrdData(): Set<PlayerData> {
+    override fun getXrdData(): Set<PlayerUpdate> {
         logFunc("getXrdData")
         if (!isXrdConnected()) {
             logStep("returning emptySet")
             return emptySet()
         }
 
-        var pDataSet = HashSet<PlayerData>()
+        var pDataSet = HashSet<PlayerUpdate>()
         logStep("for(i in 0..8)")
         for(i in 0..8){
             var pdoffset = (infoAddr.toLong() + (LowLevelConstants.GG_STRUCT_SIZE * i).toLong()).toCPointer<ByteVar>()
@@ -134,7 +131,7 @@ class ClashBountyImpl : ClashBountyApi  {
                 logStep("returning emptySet")
                 return emptySet()
             } else if (i == 0 && bufbytearray[0xC].toInt() == 0) {
-                logWarn("No lobby data to read, host display name empty")
+                logWarn("No lobby update to read, host display name empty")
                 logStep("returning emptySet")
                 return emptySet()
             } else if (bufbytearray[0xC].toInt() == 0) {
@@ -145,7 +142,7 @@ class ClashBountyImpl : ClashBountyApi  {
             for(j in 0..7){
                 steamid += bufbytearray[7-j].toLong() shl j
             }
-            var pd = PlayerData(dispname, steamid)
+            var pd = PlayerUpdate(dispname, steamid)
             pd.characterId = bufbytearray[0x36]
             pd.matchesPlayed = bufbytearray[8]
             pd.matchesWon = bufbytearray[0xA]

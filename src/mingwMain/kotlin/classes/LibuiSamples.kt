@@ -1,4 +1,4 @@
-package classes.output
+package classes
 
 import kotlinx.cinterop.convert
 import libui.*
@@ -231,7 +231,7 @@ fun DrawArea.makeAttributedString() = string(
         UnderlineAttribute(uiUnderlineDouble),
         UnderlineColorAttribute(uiUnderlineColorCustom, Color(r = 1.0, g = 0.0, b = 0.5, a = 1.0))
     )
-    append(". ")
+    append(" ")
     append("Furthermore, there are attributes allowing for ")
     append(
         "special underlines for indicating spelling errors",
