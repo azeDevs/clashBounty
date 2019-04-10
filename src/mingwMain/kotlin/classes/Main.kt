@@ -1,34 +1,58 @@
 package classes
 
-import classes.Character.getCharacterName
-import classes.session.ClashBountyApi
-import classes.session.logFunc
-import classes.session.logInfo
+import classes.session.*
+import classes.session.Character.getCharacterName
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import libui.ktx.*
 
 val xrdApi: ClashBountyApi = ClashBountyImpl()
+var guiApi: MutableList<PlayerGui> = ArrayList()
+
+class PlayerGui {
+    lateinit var playerForm: Group
+    lateinit var playerCharacter: TextField
+    lateinit var playerMatchesPlayed: TextField
+    lateinit var playerLoadPercent: ProgressBar
+}
+
 lateinit var statusText: TextField
 lateinit var connectBtn: Button
 lateinit var consoleText: TextArea
 lateinit var refreshBtn: Button
 
+var currPlayers: MutableMap<Long, Player> = HashMap()
+
 fun main() {
+    guiApi.add(PlayerGui());guiApi.add(PlayerGui());guiApi.add(PlayerGui());guiApi.add(PlayerGui())
+    guiApi.add(PlayerGui());guiApi.add(PlayerGui());guiApi.add(PlayerGui());guiApi.add(PlayerGui())
     displayAppWindow()
+}
+
+private fun startUiLoop() {
     GlobalScope.launch {
-        logFunc("coroutine")
-        delay(800)
-        uiLoop()
+        delay(32L)
+        updateUi()
     }
 }
 
-private fun displayAppWindow() = appWindow("gearNet: Clash Bounty", 320, 240) {
+private fun updateUi() {
+    if (xrdApi.isXrdRunning()) {
+        setAppStatus("Xrd is running.")
+        connectBtn.text = "Connect to GGXrd!"
+        connectBtn.enabled = true
+    } else {
+        setAppStatus("Xrd is not running.")
+        connectBtn.text = "Connect to GGXrd?"
+        connectBtn.enabled = false
+    }
+}
+
+private fun displayAppWindow() = appWindow("gearNet", 640, 480) {
     val xrdApi: ClashBountyApi = ClashBountyImpl()
     vbox {
-            statusText = textfield { readonly = true; value = "..." }
-
+        hbox {
             connectBtn = button(text = "Connect to GGXrd") {
                 action {
                     statusText.value = "Xrd is not connected."
@@ -38,38 +62,74 @@ private fun displayAppWindow() = appWindow("gearNet: Clash Bounty", 320, 240) {
                     }
                 }
             }
-
-        consoleText = textarea { readonly = true; stretchy = true; value = "" }
-        refreshBtn = button(text = "Get lobby data") {
-            action {
-                logXrdData()
+            statusText = textfield { readonly = true; value = "..." }
+        }
+        hbox {
+            vbox {
+                consoleText = textarea { readonly = true; stretchy = true; value = ""; }
+                refreshBtn = button(text = "Get lobby data") {
+                    action {
+                        logXrdData()
+                    }
+                }
+                refreshBtn.enabled = false
+            }
+            vbox {
+                for (i in 0..7) {
+                    guiApi.get(i).playerForm = group("-") {
+                        vbox {
+                            hbox {
+                                guiApi.get(i).playerCharacter = textfield { readonly = true; value = "-"; enabled = false }
+                                guiApi.get(i).playerMatchesPlayed = textfield { readonly = true; value = "- / -"; enabled = false }
+                            }
+                            guiApi.get(i).playerLoadPercent = progressbar { value = 0; enabled = false; visible = false }
+                        }
+                    }
+                }
             }
         }
-        refreshBtn.enabled = false
+
     }
 }
+
 
 private fun logXrdData() {
     logFunc("logXrdData")
-    var dataStr = "LOBBY PLAYERS: ${xrdApi.getXrdData().size}"
-    xrdApi.getXrdData().forEach { data ->
-        dataStr += "\nPlayer: ${data.displayName}"
-        dataStr += "\nSteamID: ${data.steamUserId}"
-        dataStr += "\nCharacter: ${getCharacterName(data.characterId)}"
+    if (xrdApi.connectToXrd()) {
+        val xrdData = xrdApi.getXrdData().toList()
+
+        logInfo("LOBBY UPDATED ${xrdData.size}")
+        for (i in 0..7) {
+            if (xrdData.size > i) {
+                guiApi.get(i).playerForm.title = "${xrdData.get(i).displayName}"
+                guiApi.get(i).playerCharacter.value = "${getCharacterName(xrdData.get(i).characterId)}"
+                guiApi.get(i).playerMatchesPlayed.value = "${xrdData.get(i).matchesWon} / ${xrdData.get(i).matchesPlayed}"
+                guiApi.get(i).playerLoadPercent.value = xrdData.get(i).loadingPct.toInt()
+                guiApi.get(i).playerCharacter.enabled = true
+                guiApi.get(i).playerMatchesPlayed.enabled = true
+                guiApi.get(i).playerLoadPercent.enabled = true
+            } else {
+                guiApi.get(i).playerForm.title = "-"
+                guiApi.get(i).playerCharacter.value = "-"
+                guiApi.get(i).playerMatchesPlayed.value = "-"
+                guiApi.get(i).playerLoadPercent.value = 0
+                guiApi.get(i).playerCharacter.enabled = false
+                guiApi.get(i).playerMatchesPlayed.enabled = false
+                guiApi.get(i).playerLoadPercent.enabled = false
+            }
+        }
+        updateOverlayState(xrdData)
+        statusText.value = getOverlayStatus()
     }
-    logInfo(dataStr)
 }
 
-private fun uiLoop() {
-    logFunc("uiLoop")
-    if (xrdApi.isXrdRunning()) {
-        setAppStatus("Xrd is running.")
-        connectBtn.text = "Connect to GGXrd!"
-        connectBtn.enabled = true
-    } else {
-        setAppStatus("Xrd is not running.")
-        connectBtn.text = "Connect to GGXrd?"
-        connectBtn.enabled = false
+private fun getOverlayStatus(): String {
+    logFunc("getOverlayStatus")
+    when (currentOverlay) {
+        IN_LOBBY -> return "Overlay: IN_LOBBY"
+        READYING -> return "Overlay: READYING"
+        IN_MATCH -> return "Overlay: IN_MATCH"
+        else -> return "Overlay: NONE"
     }
 }
 
@@ -83,62 +143,3 @@ fun appendToConsole(text: String) {
 }
 
 
-
-object Character {
-    const val SO: Byte = 0x00
-    const val KY: Byte = 0x01
-    const val MA: Byte = 0x02
-    const val MI: Byte = 0x03
-    const val ZA: Byte = 0x04
-    const val PO: Byte = 0x05
-    const val CH: Byte = 0x06
-    const val FA: Byte = 0x07
-    const val AX: Byte = 0x08
-    const val VE: Byte = 0x09
-    const val SL: Byte = 0x0A
-    const val IN: Byte = 0x0B
-    const val BE: Byte = 0x0C
-    const val RA: Byte = 0x0D
-    const val SI: Byte = 0x0E
-    const val EL: Byte = 0x0F
-    const val LE: Byte = 0x10
-    const val JO: Byte = 0x11
-    const val JC: Byte = 0x12
-    const val JM: Byte = 0x13
-    const val KU: Byte = 0x14
-    const val RV: Byte = 0x15
-    const val DI: Byte = 0x16
-    const val BA: Byte = 0x17
-    const val AN: Byte = 0x18
-
-    fun getCharacterName(byte: Byte):String {
-        when (byte) {
-            SO -> return "Sol Badguy"
-            KY -> return "Ky Kiske"
-            MA -> return "May"
-            MI -> return "Millia"
-            ZA -> return "Zato=1"
-            PO -> return "Potemkin"
-            CH -> return "Chipp"
-            FA -> return "Faust"
-            AX -> return "Axl Low"
-            VE -> return "Venom"
-            SL -> return "Slayer"
-            IN -> return "I-No"
-            BE -> return "Bedman"
-            RA -> return "Ramlethal"
-            SI -> return "Sin"
-            EL -> return "Elpelt"
-            LE -> return "Leo Whitefang"
-            JO -> return "Johnny"
-            JC -> return "Jack-O"
-            JM -> return "Jam"
-            KU -> return "Kum Haehyun"
-            RV -> return "Raven"
-            DI -> return "Dizzy"
-            BA -> return "Baiken"
-            AN -> return "Answer"
-            else -> return "???"
-        }
-    }
-}

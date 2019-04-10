@@ -12,7 +12,7 @@
 ////    if(opendir("./lobby_2nd") == null) mkdir("./lobby_2nd")
 ////    if(opendir("./lobby_3rd") == null) mkdir("./lobby_3rd")
 ////    if(opendir("./lobby_4th") == null) mkdir("./lobby_4th")
-//    playersData.filter { data -> data.value.getPlacing() < 5 }.forEach {
+//    players.filter { data -> data.value.getPlacing() < 5 }.forEach {
 //            data -> writePlayerToLobby(data.value)
 //    }
 //}

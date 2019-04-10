@@ -29,7 +29,7 @@ interface ClashBountyApi {
     /**
      * Serve a HashMap of PlayerData, using the steamUserId as key
      *
-     * @return a Set of the Xrd lobby's current active players and their data
+     * @return a Set of the Xrd lobby's currentOverlay active players and their data
      */
     fun getXrdData(): Set<PlayerData>
 }
