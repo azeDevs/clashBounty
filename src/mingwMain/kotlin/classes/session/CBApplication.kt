@@ -25,7 +25,7 @@ fun logBool(text: String, bool: Boolean): Boolean { addLog("\n$IC_BOOL $text: ${
 
 private fun addLog(logText: String) {
     writeToTextFile("log", logText)
-    appendToConsole(logText)
+    if (!consoleText.disposed) appendToConsole(logText)
 }
 
 fun writeToTextFile(file: String, text: String) {

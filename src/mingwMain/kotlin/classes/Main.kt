@@ -1,11 +1,21 @@
 package classes
 
+import classes.output.append
+import classes.output.libuiDrawFont
+import classes.output.makeAttributedString
 import classes.session.*
 import classes.session.Character.getCharacterName
+import kotlinx.cinterop.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import libui.*
 import libui.ktx.*
+import libui.ktx.draw.*
+import platform.posix.*
+import kotlin.native.concurrent.Future
+import kotlin.native.concurrent.TransferMode
+import kotlin.native.concurrent.Worker
 
 val xrdApi: ClashBountyApi = ClashBountyImpl()
 var guiApi: MutableList<PlayerGui> = ArrayList()
@@ -25,28 +35,7 @@ lateinit var refreshBtn: Button
 var currPlayers: MutableMap<Long, Player> = HashMap()
 
 fun main() {
-    guiApi.add(PlayerGui());guiApi.add(PlayerGui());guiApi.add(PlayerGui());guiApi.add(PlayerGui())
-    guiApi.add(PlayerGui());guiApi.add(PlayerGui());guiApi.add(PlayerGui());guiApi.add(PlayerGui())
     displayAppWindow()
-}
-
-private fun startUiLoop() {
-    GlobalScope.launch {
-        delay(32L)
-        updateUi()
-    }
-}
-
-private fun updateUi() {
-    if (xrdApi.isXrdRunning()) {
-        setAppStatus("Xrd is running.")
-        connectBtn.text = "Connect to GGXrd!"
-        connectBtn.enabled = true
-    } else {
-        setAppStatus("Xrd is not running.")
-        connectBtn.text = "Connect to GGXrd?"
-        connectBtn.enabled = false
-    }
 }
 
 private fun displayAppWindow() = appWindow("gearNet", 640, 480) {
@@ -54,6 +43,7 @@ private fun displayAppWindow() = appWindow("gearNet", 640, 480) {
     vbox {
         hbox {
             connectBtn = button(text = "Connect to GGXrd") {
+                visible = false
                 action {
                     statusText.value = "Xrd is not connected."
                     if (xrdApi.connectToXrd()) {
@@ -66,8 +56,8 @@ private fun displayAppWindow() = appWindow("gearNet", 640, 480) {
         }
         hbox {
             vbox {
-                consoleText = textarea { readonly = true; stretchy = true; value = ""; }
-                refreshBtn = button(text = "Get lobby data") {
+                consoleText = textarea { readonly = true; stretchy = true; value = ""; visible = false }
+                refreshBtn = button(text = "Get lobby data") { visible = false
                     action {
                         logXrdData()
                     }
@@ -76,19 +66,51 @@ private fun displayAppWindow() = appWindow("gearNet", 640, 480) {
             }
             vbox {
                 for (i in 0..7) {
-                    guiApi.get(i).playerForm = group("-") {
+                    guiApi.add(PlayerGui())
+                    guiApi.get(i).playerForm = group("") {
                         vbox {
                             hbox {
-                                guiApi.get(i).playerCharacter = textfield { readonly = true; value = "-"; enabled = false }
+                                guiApi.get(i).playerCharacter = textfield { readonly = true; value = ""; enabled = false }
                                 guiApi.get(i).playerMatchesPlayed = textfield { readonly = true; value = "- / -"; enabled = false }
+                                textfield { readonly = true; value = "- W$"; enabled = false }
                             }
-                            guiApi.get(i).playerLoadPercent = progressbar { value = 0; enabled = false; visible = false }
+                            hbox {
+                                guiApi.get(i).playerLoadPercent = progressbar { value = 0; enabled = false; visible = true }
+                                drawarea {
+                                    val str = makeAttributedString("?")
+                                    val value = 1
+                                    val font = fontbutton() { visible = false }
+                                    draw { text(str, font.value, it.AreaWidth, value.convert(), 0.0, 0.0) }
+                                    stretchy = true
+                                }
+                            }
                         }
                     }
                 }
             }
         }
+    }
+    onTimer(1000) {
+        memScoped {
+            val now = alloc<time_tVar>().apply { value = time(null) }
+            val str = ctime(now.ptr)!!.toKString()
+            logInfo("UI UPDATE: ${str}")
 
+            if (classes.xrdApi.isXrdRunning()) {
+                setAppStatus("Xrd is running")
+                connectBtn.enabled = true
+                if (classes.xrdApi.connectToXrd()) {
+                    setAppStatus("Xrd is connected")
+                    refreshBtn.enabled = true
+                    logXrdData()
+                }
+
+            } else {
+                setAppStatus("Xrd not found")
+                connectBtn.enabled = false
+            }
+        }
+        true
     }
 }
 
@@ -109,9 +131,9 @@ private fun logXrdData() {
                 guiApi.get(i).playerMatchesPlayed.enabled = true
                 guiApi.get(i).playerLoadPercent.enabled = true
             } else {
-                guiApi.get(i).playerForm.title = "-"
-                guiApi.get(i).playerCharacter.value = "-"
-                guiApi.get(i).playerMatchesPlayed.value = "-"
+                guiApi.get(i).playerForm.title = ""
+                guiApi.get(i).playerCharacter.value = ""
+                guiApi.get(i).playerMatchesPlayed.value = "- / -"
                 guiApi.get(i).playerLoadPercent.value = 0
                 guiApi.get(i).playerCharacter.enabled = false
                 guiApi.get(i).playerMatchesPlayed.enabled = false
@@ -139,7 +161,6 @@ private fun setAppStatus(text: String) {
 
 fun appendToConsole(text: String) {
     consoleText.append(text)
-    consoleText.show()
 }
 
 

@@ -1,9 +1,11 @@
 package classes.output
 
 import kotlinx.cinterop.convert
-import libui.*
 import libui.ktx.*
 import libui.ktx.draw.*
+import libui.uiDrawDefaultMiterLimit
+import libui.uiDrawLineCapFlat
+import libui.uiDrawLineJoinMiter
 
 
 /**
@@ -196,61 +198,22 @@ fun libuiHistogram() = appWindow(
  * ------------------------------------------------------------------------
  */
 
-fun AttributedString.append(what: String, attr: Attribute, attr2: Attribute? = null) {
+fun AttributedString.append(what: String, attr: Attribute, attr2: Attribute? = null, attr3: Attribute? = null, attr4: Attribute? = null) {
     val start = length
     val end = start + what.length
     append(what)
     setAttribute(attr, start, end)
-    if (attr2 != null)
-        setAttribute(attr2, start, end)
+    if (attr2 != null) setAttribute(attr2, start, end)
+    if (attr3 != null) setAttribute(attr3, start, end)
+    if (attr4 != null) setAttribute(attr4, start, end)
 }
 
-fun DrawArea.makeAttributedString() = string(
-    "Drawing strings with libui is done with the uiAttributedString and uiDrawTextLayout objects.\n" +
-            "uiAttributedString lets you have a variety of attributes: "
-).apply {
-    append("font family", FamilyAttribute("Courier New"))
-    append(", ")
-    append("font size", SizeAttribute(18.0))
-    append(", ")
-    append("font weight", WeightAttribute(uiTextWeightBold))
-    append(", ")
-    append("font italicness", ItalicAttribute(uiTextItalicItalic))
-    append(", ")
-    append("font stretch", StretchAttribute(uiTextStretchCondensed))
-    append(", ")
-    append("text color", ColorAttribute(Color(r = 0.75, g = 0.25, b = 0.5, a = 0.75)))
-    append(", ")
-    append("text background color", BackgroundAttribute(Color(r = 0.5, g = 0.5, b = 0.25, a = 0.5)))
-    append(", ")
-    append("underline style", UnderlineAttribute(uiUnderlineSingle))
-    append(", ")
-    append("and ")
-    append(
-        "underline color",
-        UnderlineAttribute(uiUnderlineDouble),
-        UnderlineColorAttribute(uiUnderlineColorCustom, Color(r = 1.0, g = 0.0, b = 0.5, a = 1.0))
+fun DrawArea.makeAttributedString(str: String) = string("").apply {
+    append(str,
+        FamilyAttribute("Paladins"),
+        ColorAttribute(Color(r = 0.08, g = 0.08, b = 0.16, a = 0.64)),
+        SizeAttribute(12.0)
     )
-    append(". ")
-    append("Furthermore, there are attributes allowing for ")
-    append(
-        "special underlines for indicating spelling errors",
-        UnderlineAttribute(uiUnderlineSuggestion),
-        UnderlineColorAttribute(uiUnderlineColorSpelling, Color(r = 0.0, g = 0.0, b = 0.0, a = 0.0))
-    )
-    append(" (and other types of errors) ")
-    append("and control over OpenType features such as ligatures (for instance, ")
-
-    val otf = OpenTypeFeatures()
-    otf.add("liga", 0u)
-    append("afford", FeaturesAttribute(otf))
-    append(" vs. ")
-    otf.add("liga", 1u)
-    append("afford", FeaturesAttribute(otf))
-    otf.dispose()
-    append(").\n")
-
-    append("Use the controls opposite to the text to control properties of the text.")
 }
 
 fun libuiDrawFont() = appWindow(
@@ -273,13 +236,13 @@ fun libuiDrawFont() = appWindow(
                     item("Left")
                     item("Center")
                     item("Right")
-                    value = 0
+                    value = 1
                     action { area.redraw() }
                 }
             }
         }
         area = drawarea {
-            val str = makeAttributedString()
+            val str = makeAttributedString("Some Text")
             draw {
                 text(str, font.value, it.AreaWidth, align.value.convert(), 0.0, 0.0)
             }
