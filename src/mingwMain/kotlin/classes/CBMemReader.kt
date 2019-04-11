@@ -1,6 +1,5 @@
 package classes
 
-import classes.session.*
 import kotlinx.cinterop.*
 import kwinhelp.*
 import platform.windows.CloseHandle
@@ -8,7 +7,7 @@ import platform.windows.HANDLE
 import platform.windows.OpenProcess
 import platform.windows.ReadProcessMemory
 
-class ClashBountyImpl : ClashBountyApi  {
+class XrdMemReader : XrdApi {
 
 
 
@@ -110,7 +109,7 @@ class ClashBountyImpl : ClashBountyApi  {
     override fun isXrdConnected(): Boolean {
         logFunc("isXrdConnected")
         val connected = (logBool("infoAddr != null", infoAddr != null) &&
-                logBool("infoAddr.equals(CPointer)",  !infoAddr!!.equals(0L.toCPointer<ByteVar>())))
+                logBool("infoAddr.equals(CPointer)", !infoAddr!!.equals(0L.toCPointer<ByteVar>())))
         return logBool("isXrdConnected", connected)
     }
 

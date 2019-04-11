@@ -1,4 +1,4 @@
-package classes.output
+package classes
 
 import kotlinx.cinterop.convert
 import libui.ktx.*

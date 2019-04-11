@@ -1,7 +1,7 @@
 //package classes.session
 //
-//import classes.session.getFullscreen
-//import classes.session.logInfo
+//import classes.getFullscreen
+//import classes.logInfo
 //
 //val strs = "name, 2012, 2017".split("\n").toTypedArray()
 //
