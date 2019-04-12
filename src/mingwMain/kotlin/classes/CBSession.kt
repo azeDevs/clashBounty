@@ -12,7 +12,7 @@ class Session {
 
     fun connected() = xrdApi.isXrdRunning() && xrdApi.connectToXrd()
 
-//    fun getLobby() = playerSessions.values.filter { e -> e.inLobby() }.toList().sortedBy { e -> e.getBounty() }
+    fun getLobby() = playerSessions.values.filter { e -> e.inLobby() }.toList().sortedBy { e -> e.getBounty() }
     fun getOne(index:Int) = playerSessions.values.toList().sortedBy { e -> e.getBounty() }.get(index)
     fun getAll() = playerSessions.values.toList()
 
@@ -116,6 +116,24 @@ class Player(playerData: PlayerData) {
 
     fun giveBounty(amount: Int) {
         bounty += amount
+    }
+
+    fun getRiskRating(): String {
+        var grade = "?"
+        if (getMatchesPlayed() > 4) {
+            val gradeConversion = (getMatchesWon() + getChain()) / getMatchesPlayed()
+            if (getMatchesPlayed() >= 16 && gradeConversion > 0.2) grade = "D"
+            if (getMatchesPlayed() >= 8 && gradeConversion > 0.3) grade = "D+"
+            if (gradeConversion > 0.4) grade = "C"
+            if (gradeConversion > 0.5) grade = "C+"
+            if (gradeConversion > 0.6) grade = "B"
+            if (gradeConversion > 0.8) grade = "B+"
+            if (gradeConversion > 1.0) grade = "A"
+            if (gradeConversion > 1.5) grade = "A+"
+            if (getMatchesPlayed() >= 8 && gradeConversion > 2.0) grade = "S"
+            if (getMatchesPlayed() >= 16 && gradeConversion > 2.5) grade = "S+"
+        }
+        return grade
     }
 
 }

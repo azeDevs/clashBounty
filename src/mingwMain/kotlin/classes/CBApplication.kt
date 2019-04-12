@@ -2,7 +2,6 @@ package classes
 
 import kotlinx.cinterop.*
 import libui.ktx.*
-import libui.ktx.draw.text
 import platform.posix.*
 
 //lateinit var consoleText: TextArea
@@ -28,13 +27,7 @@ fun displayAppWindow() = appWindow("gearNet", 640, 480) {
                         }
                         hbox {
                             guiApi.get(i).playerLoadPercent = progressbar { value = 0; enabled = false; visible = true }
-                            guiApi.get(i).playerRiskRating = drawarea {
-                                val str = makeAttributedString("?")
-                                val value = 1
-                                val font = fontbutton() { visible = false }
-                                draw { text(str, font.value, it.AreaWidth, value.convert(), 0.0, 0.0) }
-                                stretchy = true
-                            }
+                            guiApi.get(i).playerRating = textfield { readonly = true; value = "Risk Rating: -"; enabled = false }
                         }
                     }
                 }
@@ -56,24 +49,30 @@ fun displayAppWindow() = appWindow("gearNet", 640, 480) {
                         if (!guiApi.get(i).playerForm.title.equals("${guiUpdate.get(i).getName()}")) guiApi.get(i).playerForm.title = "${guiUpdate.get(i).getName()}"
                         if (!guiApi.get(i).playerCharacter.value.equals("${guiUpdate.get(i).getCharacter()}")) guiApi.get(i).playerCharacter.value = "${guiUpdate.get(i).getCharacter()}"
                         if (!guiApi.get(i).playerMatchesPlayed.value.equals("${guiUpdate.get(i).getMatchesWon()} / ${guiUpdate.get(i).getMatchesPlayed()}")) guiApi.get(i).playerMatchesPlayed.value = "${guiUpdate.get(i).getMatchesWon()} / ${guiUpdate.get(i).getMatchesPlayed()}"
-                        if (guiUpdate.get(i).getLoadPercent() != 100) guiApi.get(i).playerLoadPercent.value = guiUpdate.get(i).getLoadPercent()
+                        if (guiUpdate.get(i).getLoadPercent() < 100 && guiUpdate.get(i).getLoadPercent() > 0 ) guiApi.get(i).playerLoadPercent.value = guiUpdate.get(i).getLoadPercent()
                         else guiApi.get(i).playerLoadPercent.value = 0
+
+                        if (!guiApi.get(i).playerBounty.value.equals("${guiUpdate.get(i).getBounty()} W$")) guiApi.get(i).playerBounty.value = "${guiUpdate.get(i).getBounty()} W$"
+                        if (!guiApi.get(i).playerRating.value.equals("Risk Rating: ${guiUpdate.get(i).getRiskRating()}")) guiApi.get(i).playerRating.value = "Risk Rating: ${guiUpdate.get(i).getRiskRating()}"
+
+
                         if (!guiApi.get(i).playerCharacter.isEnabled()) guiApi.get(i).playerCharacter.enabled = true
                         if (!guiApi.get(i).playerMatchesPlayed.isEnabled()) guiApi.get(i).playerMatchesPlayed.enabled = true
                         if (!guiApi.get(i).playerLoadPercent.isEnabled()) guiApi.get(i).playerLoadPercent.enabled = true
-                        if (!guiApi.get(i).playerBounty.value.equals("${guiUpdate.get(i).getBounty()} W$")) guiApi.get(i).playerBounty.value = "${guiUpdate.get(i).getBounty()} W$"
-                        if (!guiApi.get(i).playerRiskRating.isEnabled()) guiApi.get(i).playerRiskRating.enabled = true
                         if (!guiApi.get(i).playerBounty.isEnabled()) guiApi.get(i).playerBounty.enabled = true
-
-                        guiApi.get(i).playerBounty.enabled = true
+                        if (!guiApi.get(i).playerRating.isEnabled()) guiApi.get(i).playerRating.enabled = true
                     } else {
                         guiApi.get(i).playerForm.title = ""
                         guiApi.get(i).playerCharacter.value = ""
                         guiApi.get(i).playerMatchesPlayed.value = "- / -"
+                        guiApi.get(i).playerBounty.value = "- W$"
                         guiApi.get(i).playerLoadPercent.value = 0
+                        guiApi.get(i).playerRating.value = "Risk Rating: -"
                         guiApi.get(i).playerCharacter.enabled = false
                         guiApi.get(i).playerMatchesPlayed.enabled = false
                         guiApi.get(i).playerLoadPercent.enabled = false
+                        guiApi.get(i).playerBounty.enabled = false
+                        guiApi.get(i).playerRating.enabled = false
                     }
 
                 }
@@ -97,7 +96,7 @@ class PlayerGui {
     lateinit var playerMatchesPlayed: TextField
     lateinit var playerLoadPercent: ProgressBar
     lateinit var playerBounty: TextField
-    lateinit var playerRiskRating: DrawArea
+    lateinit var playerRating: TextField
 }
 
 private val IC_INFO = "> "
