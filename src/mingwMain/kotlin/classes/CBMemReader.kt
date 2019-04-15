@@ -115,35 +115,24 @@ class XrdMemReader : XrdApi {
 
     override fun getXrdData(): Set<PlayerData> {
         logFunc("getXrdData")
-        if (!isXrdConnected()) {
-            logStep("returning emptySet")
-            return emptySet()
-        }
+        if (!isXrdConnected()) return emptySet()
 
         var pDataSet = HashSet<PlayerData>()
-        logStep("for(i in 0..8)")
         for(i in 0..8){
             var pdoffset = (infoAddr.toLong() + (LowLevelConstants.GG_STRUCT_SIZE * i).toLong()).toCPointer<ByteVar>()
             var buffer = nativeHeap.allocArray<ByteVar>(LowLevelConstants.GG_STRUCT_SIZE)
             var bytesread = nativeHeap.alloc<ULongVar>()
             var error = ReadProcessMemory(phandle, pdoffset, buffer, LowLevelConstants.GG_STRUCT_SIZE.toULong(), bytesread.ptr)
             var bufbytearray = buffer.pointed.readValues(LowLevelConstants.GG_STRUCT_SIZE).getBytes()
-            if(error == 0){
-                logWarn("ReadProcessMemory Failed")
-                logStep("returning emptySet")
-                return emptySet()
-            } else if (i == 0 && bufbytearray[0xC].toInt() == 0) {
-                logWarn("No lobby data to read, host display name empty")
-                logStep("returning emptySet")
-                return emptySet()
-            } else if (bufbytearray[0xC].toInt() == 0) {
-                continue
-            }
+
+            if(error == 0) return emptySet()
+            else if (i == 0 && bufbytearray[0xC].toInt() == 0) return emptySet()
+            else if (bufbytearray[0xC].toInt() == 0) continue
+
             var dispname = bufbytearray.stringFromUtf8(0xC, 0x24).trim('\u0000')
             var steamid = 0L
-            for(j in 0..7){
-                steamid += bufbytearray[7-j].toLong() shl j
-            }
+            for(j in 0..7) steamid += bufbytearray[7-j].toLong() shl j
+
             var pd = PlayerData(dispname, steamid)
             pd.characterId = bufbytearray[0x36]
             pd.matchesPlayed = bufbytearray[8]

@@ -8,6 +8,7 @@ repositories {
 
 kotlin {
     mingwX64("mingw").compilations["main"].defaultSourceSet {
+        kotlin.srcDir("src/mingwMain/resources")
         dependencies {
             implementation(files("src/libs/kwinhelp.klib"))
             implementation(files("src/libs/libui-windows.klib"))
@@ -24,7 +25,7 @@ kotlin {
                 baseName = "gearNet"
                 // Custom entry point function.
                 entryPoint = "classes.main"
-                windowsResources("gui.rc")
+                windowsResources("gearnet.rc")
                 linkerOpts("-mwindows")
             }
         }

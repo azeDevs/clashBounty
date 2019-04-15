@@ -4,3 +4,5 @@
 // this is the Common Controls 6 manifest
 // 1 is the value of CREATEPROCESS_MANIFEST_RESOURCE_ID and 24 is the value of RT_MANIFEST
 1 24 "gui.manifest"
+
+MAINICON ICON "gearnet.ico"

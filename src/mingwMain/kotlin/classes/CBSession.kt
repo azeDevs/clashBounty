@@ -6,9 +6,16 @@ import classes.Character.getCharacterName
 class Session {
     private val xrdApi: XrdApi = XrdMemReader()
     private var playerSessions: MutableMap<Long, Player> = HashMap()
-    private var updateCount: Long = 0
+    private var updateCount: Int = 0
 
-    fun getUpdateCounter() = updateCount++
+    fun getUpdateCounter(): String {
+        when (updateCount++) {
+            0 -> return ""
+            1 -> return "."
+            2 -> return ".."
+            else -> { updateCount = 0; return "..." }
+        }
+    }
 
     fun connected() = xrdApi.isXrdRunning() && xrdApi.connectToXrd()
 
@@ -59,15 +66,15 @@ class Player(playerData: PlayerData) {
 
         if (justWon(nextUpdate.matchesWon.toInt())) {
             chain++; wins++; matches++
+            bounty += 100 + (100 * chain)
         } else if (justPlayed(nextUpdate.matchesPlayed.toInt())) {
-            if (chain < 2) chain = 0; else chain -= 2; matches++
+            if (chain < 2) chain = 0; else chain -= 2
+            if (bounty > 100) bounty -= bounty / 2
+            bounty += 10 + (10 * chain)
+            matches++
         }
 
         lastUpdate = nextUpdate
-    }
-
-    fun getId(): Long {
-        return steamId
     }
 
     fun getName(): String {
@@ -114,24 +121,20 @@ class Player(playerData: PlayerData) {
         return inLobby
     }
 
-    fun giveBounty(amount: Int) {
-        bounty += amount
-    }
-
     fun getRiskRating(): String {
-        var grade = "?"
-        if (getMatchesPlayed() > 4) {
-            val gradeConversion = (getMatchesWon() + getChain()) / getMatchesPlayed()
-            if (getMatchesPlayed() >= 16 && gradeConversion > 0.2) grade = "D"
-            if (getMatchesPlayed() >= 8 && gradeConversion > 0.3) grade = "D+"
-            if (gradeConversion > 0.4) grade = "C"
-            if (gradeConversion > 0.5) grade = "C+"
-            if (gradeConversion > 0.6) grade = "B"
-            if (gradeConversion > 0.8) grade = "B+"
-            if (gradeConversion > 1.0) grade = "A"
-            if (gradeConversion > 1.5) grade = "A+"
-            if (getMatchesPlayed() >= 8 && gradeConversion > 2.0) grade = "S"
-            if (getMatchesPlayed() >= 16 && gradeConversion > 2.5) grade = "S+"
+        var grade = "-"
+        if (getMatchesWon() > 0) {
+            val gradeConversion:Float = ((getMatchesWon() + getChain()) / (getMatchesPlayed() - getChain())).toFloat()
+            if (gradeConversion > 0.2) grade = "D"
+            if (gradeConversion > 0.3) grade = "D+"
+            if (gradeConversion >= 0.4) grade = "C"
+            if (gradeConversion >= 0.5) grade = "C+"
+            if (gradeConversion >= 0.6) grade = "B"
+            if (gradeConversion >= 0.8) grade = "B+"
+            if (gradeConversion >= 1.0) grade = "A"
+            if (gradeConversion >= 1.5) grade = "A+"
+            if (gradeConversion >= 2.0) grade = "S"
+            if (gradeConversion >= 2.5) grade = "S+"
         }
         return grade
     }

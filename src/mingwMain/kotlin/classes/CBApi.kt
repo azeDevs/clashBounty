@@ -35,9 +35,24 @@ interface XrdApi {
 }
 
 
+/**
+ * Class object produced by [XrdMemReader]
+ */
+class LobbyData() {
+    val players = arrayOfNulls<PlayerData>(8)
+    val cabinets = arrayOfNulls<CabinetData>(4)
+}
 
 /**
- * Class object produced by [XrdClashBountyApi]
+ * Class object produced by [XrdMemReader]
+ */
+class CabinetData() {
+    val players = arrayOfNulls<PlayerData>(2)
+    val spectators = arrayOfNulls<PlayerData>(6)
+}
+
+/**
+ * Class object produced by [XrdMemReader]
  */
 class PlayerData(val displayName: String, val steamUserId: Long) {
     var characterId: Byte = 0x0
