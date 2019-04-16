@@ -105,7 +105,6 @@ class XrdMemReader : XrdApi {
         return 0L.toCPointer()
     }
 
-    // I'm working on the curfew alert adapter not refreshing properly
     override fun isXrdConnected(): Boolean {
         logFunc("isXrdConnected")
         val connected = (logBool("infoAddr != null", infoAddr != null) &&
@@ -134,7 +133,7 @@ class XrdMemReader : XrdApi {
             for(j in 0..7) steamid += bufbytearray[7-j].toLong() shl j
 
             var playerData = PlayerData(
-                displayName = truncateName(dispname, 25),
+                displayName = truncate(dispname, 24),
                 steamUserId = steamid,
                 characterId = bufbytearray[0x36],
                 matchesTotal = bufbytearray[8].toInt(),
@@ -155,7 +154,7 @@ object LowLevelConstants {
     const val GG_STRUCT_SIZE = 0x48
 }
 
-fun truncateName(name: String, length: Int): String {
-    if (name.length > length) return name.substring(25)
+fun truncate(name: String, length: Int): String {
+    if (name.length > length) return name.substring(0, length)
     else return name
 }

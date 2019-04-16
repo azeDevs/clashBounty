@@ -11,24 +11,20 @@ import platform.posix.time_tVar
 private var statusText: String = "DISCONNECTED ❌"
 private var guiApi: MutableList<PlayerGui> = ArrayList()
 
-private val fakeData = List(16) {
-    Player(PlayerData("Foonameagain", 1L, VE, 0, 0, 0))
-}
-
 fun displayAppWindow() = appWindow("gearNet", 600, 400) {
     val session = Session()
 
     vbox { stretchy = true
         for (i in 0..7) {
             guiApi.add(PlayerGui())
-            guiApi.get(i).playerForm = group("") {
+            guiApi.get(i).playerGroup = group("") {
                 vbox { padded = false
                     hbox { padded = false
-                        guiApi.get(i).playerCharacter = textfield { readonly = true; value = ""; enabled = false; padded = false  }
-                        guiApi.get(i).playerRecord = textfield { readonly = true; value = ""; enabled = false; padded = false  }
-                        guiApi.get(i).playerBounty = textfield { readonly = true; value = ""; enabled = false; padded = false }
-                        guiApi.get(i).playerRating = textfield { readonly = true; value = ""; enabled = false; padded = false }
-                        guiApi.get(i).playerLoading = textfield { readonly = true; value = ""; enabled = false; padded = false  }
+                        guiApi.get(i).character = textfield { readonly = true; value = ""; enabled = false; padded = false  }
+                        guiApi.get(i).record = textfield { readonly = true; value = ""; enabled = false; padded = false  }
+                        guiApi.get(i).bounty = textfield { readonly = true; value = ""; enabled = false; padded = false }
+                        guiApi.get(i).rating = textfield { readonly = true; value = ""; enabled = false; padded = false }
+                        guiApi.get(i).status = textfield { readonly = true; value = ""; enabled = false; padded = false  }
                     }
                 }
             }
@@ -47,38 +43,39 @@ fun displayAppWindow() = appWindow("gearNet", 600, 400) {
                 val guiUpdate = session.getAll()
                 for (i in 0..7) {
                     if (guiUpdate.size > i) {
-                        if (!guiApi.get(i).playerForm.title.equals("${guiUpdate.get(i).getName()} [${guiUpdate.get(i).getId()}]")) guiApi.get(i).playerForm.title = "${guiUpdate.get(i).getName()} [${guiUpdate.get(i).getId()}]"
-                        if (!guiApi.get(i).playerCharacter.value.equals("${guiUpdate.get(i).getCharacter()}")) guiApi.get(i).playerCharacter.value = "${guiUpdate.get(i).getCharacter()}"
-                        if (!guiApi.get(i).playerRecord.value.equals("${guiUpdate.get(i).getChain()} C / ${guiUpdate.get(i).getMatchesWon()} W / ${guiUpdate.get(i).getMatchesPlayed()} M")) guiApi.get(i).playerRecord.value = "${guiUpdate.get(i).getChain()} C / ${guiUpdate.get(i).getMatchesWon()} W / ${guiUpdate.get(i).getMatchesPlayed()} M"
-                        if (!guiApi.get(i).playerBounty.value.equals("${guiUpdate.get(i).getBounty()} W$")) guiApi.get(i).playerBounty.value = "${guiUpdate.get(i).getBounty()} W$"
-                        if (!guiApi.get(i).playerRating.value.equals("Rating: ${guiUpdate.get(i).getRiskRating()}")) guiApi.get(i).playerRating.value = "Rating: ${guiUpdate.get(i).getRiskRating()}"
-                        if (!guiApi.get(i).playerLoading.value.equals("${guiUpdate.get(i).getLoadPercent()}%")) guiApi.get(i).playerLoading.value = "${guiUpdate.get(i).getLoadPercent()}%"
-//                        if (guiUpdate.get(i).inLobby) {
-//                            guiApi.get(i).playerCharacter.enabled = true
-//                            guiApi.get(i).playerRecord.enabled = true
-//                            guiApi.get(i).playerBounty.enabled = true
-//                            guiApi.get(i).playerRating.enabled = true
-//                            guiApi.get(i).playerLoading.enabled = true
-//                        } else {
-//                            guiApi.get(i).playerCharacter.enabled = false
-//                            guiApi.get(i).playerRecord.enabled = false
-//                            guiApi.get(i).playerBounty.enabled = false
-//                            guiApi.get(i).playerRating.enabled = false
-//                            guiApi.get(i).playerLoading.enabled = false
-//                        }
+                        val player = guiUpdate.get(i)
+                        if (!guiApi.get(i).playerGroup.title.equals(player.getNameString())) guiApi.get(i).playerGroup.title = player.getNameString()
+                        if (!guiApi.get(i).character.value.equals(player.getCharacter())) guiApi.get(i).character.value = player.getCharacter()
+                        if (!guiApi.get(i).record.value.equals(player.getRecordString())) guiApi.get(i).record.value = player.getRecordString()
+                        if (!guiApi.get(i).bounty.value.equals(player.getBountyString())) guiApi.get(i).bounty.value = player.getBountyString()
+                        if (!guiApi.get(i).rating.value.equals(player.getRatingString())) guiApi.get(i).rating.value = player.getRatingString()
+                        if (!guiApi.get(i).status.value.equals(player.getStatusString())) guiApi.get(i).status.value = player.getStatusString()
+                        if (player.inLobby) {
+                            guiApi.get(i).character.enabled = true
+                            guiApi.get(i).record.enabled = true
+                            guiApi.get(i).bounty.enabled = true
+                            guiApi.get(i).rating.enabled = true
+                            guiApi.get(i).status.enabled = true
+                        } else {
+                            guiApi.get(i).character.enabled = false
+                            guiApi.get(i).record.enabled = false
+                            guiApi.get(i).bounty.enabled = false
+                            guiApi.get(i).rating.enabled = false
+                            guiApi.get(i).status.enabled = false
+                        }
                     } else {
-                        guiApi.get(i).playerForm.title = ""
-                        guiApi.get(i).playerCharacter.value = "-"
-                        guiApi.get(i).playerRecord.value = "- C / - W / - M"
-                        guiApi.get(i).playerBounty.value = "- W$"
-                        guiApi.get(i).playerRating.value = "Rating: -"
-                        guiApi.get(i).playerLoading.value = "0%"
+                        guiApi.get(i).playerGroup.title = ""
+                        guiApi.get(i).character.value = "-"
+                        guiApi.get(i).record.value = "- C / - W / - M"
+                        guiApi.get(i).bounty.value = "- W$"
+                        guiApi.get(i).rating.value = "Rating: -"
+                        guiApi.get(i).status.value = "0%"
 
-//                        guiApi.get(i).playerCharacter.enabled = false
-//                        guiApi.get(i).playerRecord.enabled = false
-//                        guiApi.get(i).playerBounty.enabled = false
-//                        guiApi.get(i).playerRating.enabled = false
-//                        guiApi.get(i).playerLoading.enabled = false
+                        guiApi.get(i).character.enabled = false
+                        guiApi.get(i).record.enabled = false
+                        guiApi.get(i).bounty.enabled = false
+                        guiApi.get(i).rating.enabled = false
+                        guiApi.get(i).status.enabled = false
                     }
 
                 }
@@ -97,12 +94,12 @@ private fun setAppStatus(text: String) {
 }
 
 class PlayerGui {
-    lateinit var playerForm: Group
-    lateinit var playerCharacter: TextField
-    lateinit var playerRecord: TextField
-    lateinit var playerBounty: TextField
-    lateinit var playerRating: TextField
-    lateinit var playerLoading: TextField
+    lateinit var playerGroup: Group
+    lateinit var character: TextField
+    lateinit var record: TextField
+    lateinit var bounty: TextField
+    lateinit var rating: TextField
+    lateinit var status: TextField
 }
 
 private val IC_INFO = "> "
