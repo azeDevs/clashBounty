@@ -117,7 +117,7 @@ class XrdMemReader : XrdApi {
         logFunc("getXrdData")
         if (!isXrdConnected()) return emptySet()
 
-        var pDataSet = HashSet<PlayerData>()
+        var playerDataSet = HashSet<PlayerData>()
         for(i in 0..8){
             var pdoffset = (infoAddr.toLong() + (LowLevelConstants.GG_STRUCT_SIZE * i).toLong()).toCPointer<ByteVar>()
             var buffer = nativeHeap.allocArray<ByteVar>(LowLevelConstants.GG_STRUCT_SIZE)
@@ -133,15 +133,16 @@ class XrdMemReader : XrdApi {
             var steamid = 0L
             for(j in 0..7) steamid += bufbytearray[7-j].toLong() shl j
 
-            var pd = PlayerData(dispname, steamid)
-            pd.characterId = bufbytearray[0x36]
-            pd.matchesPlayed = bufbytearray[8]
-            pd.matchesWon = bufbytearray[0xA]
-            pd.loadingPct = bufbytearray[0x40]
-            pDataSet.add(pd)
+            var playerData = PlayerData(
+                displayName = truncateName(dispname, 25),
+                steamUserId = steamid,
+                characterId = bufbytearray[0x36],
+                matchesTotal = bufbytearray[8].toInt(),
+                matchesWon = bufbytearray[0xA].toInt(),
+                loadingPct = bufbytearray[0x40].toInt())
+            playerDataSet.add(playerData)
         }
-        logStep("returning pDataSet")
-        return pDataSet
+        return playerDataSet
     }
 
     var infoAddr = 0L.toCPointer<ByteVar>()
@@ -152,4 +153,9 @@ class XrdMemReader : XrdApi {
 object LowLevelConstants {
     const val PROC_ALL_ACCESS: UInt = 0x438u
     const val GG_STRUCT_SIZE = 0x48
+}
+
+fun truncateName(name: String, length: Int): String {
+    if (name.length > length) return name.substring(25)
+    else return name
 }

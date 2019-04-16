@@ -1,7 +1,5 @@
 package classes
 
-import classes.Character.getCharacterName
-
 
 class Session {
     private val xrdApi: XrdApi = XrdMemReader()
@@ -19,19 +17,16 @@ class Session {
 
     fun connected() = xrdApi.isXrdRunning() && xrdApi.connectToXrd()
 
-    fun getLobby() = playerSessions.values.filter { e -> e.inLobby() }.toList().sortedBy { e -> e.getBounty() }
-    fun getOne(index:Int) = playerSessions.values.toList().sortedBy { e -> e.getBounty() }.get(index)
     fun getAll() = playerSessions.values.toList()
 
     fun updatePlayerData() {
         xrdApi.getXrdData().forEach { data ->
+            if (data.steamUserId == 0L) playerSessions.values.forEach { session ->
+                if (session.getName().equals(data.displayName)) session.inLobby = false
+            }
             if (!playerSessions.containsKey(data.steamUserId)) playerSessions.put(data.steamUserId, Player(data))
             playerSessions.forEach { session ->
-                session.value.inLobby(false)
-                if (session.key == data.steamUserId) {
-                    session.value.inLobby(true)
-                    session.value.update(data)
-                }
+                if (session.key == data.steamUserId) session.value.update(data)
             }
         }
     }
@@ -40,49 +35,39 @@ class Session {
 
 class Player(playerData: PlayerData) {
 
-    private var inLobby = false
-    private var name = truncateName(playerData.displayName)
-    private var character = getCharacterName(playerData.characterId)
-    private val steamId = playerData.steamUserId
     private var bounty = 0
     private var chain = 0
-    private var wins = playerData.matchesWon.toInt()
-    private var matches = playerData.matchesPlayed.toInt()
-    private var loadPct: Byte = 0x0
+    private var data = Pair(playerData, playerData)
+    var inLobby =  true
 
-    private var lastUpdate: PlayerData? = null
+    private fun oldData() = data.first
+    private fun newData() = data.second
 
-    fun truncateName(name: String): String {
-        if (name.length > 25) return name.substring(25)
-        else return name
-    }
-
-    fun update(nextUpdate: PlayerData) {
-        logInfo("player update ${nextUpdate.displayName}")
-        if (lastUpdate == null) lastUpdate = nextUpdate
-        name = nextUpdate.displayName
-        character = getCharacterName(nextUpdate.characterId)
-        loadPct = nextUpdate.loadingPct
-
-        if (justWon(nextUpdate.matchesWon.toInt())) {
-            chain++; wins++; matches++
-            bounty += 100 + (100 * chain)
-        } else if (justPlayed(nextUpdate.matchesPlayed.toInt())) {
-            if (chain < 2) chain = 0; else chain -= 2
-            if (bounty > 100) bounty -= bounty / 2
-            bounty += 10 + (10 * chain)
-            matches++
-        }
-
-        lastUpdate = nextUpdate
+    fun update(updatedData: PlayerData):Boolean {
+        data = Pair(newData(), updatedData)
+        inLobby = true
+        if (!oldData().equals(newData())) {
+            if (justWon()) {
+                bounty += 100 * (++chain+1) * (newData().matchesTotal + newData().matchesWon)
+            } else if (justPlayed()) {
+                if (chain < 2) chain = 0; else chain -= 2
+                if (bounty > 10) bounty -= bounty / 2
+                bounty += 10 * (chain+1) * (newData().matchesTotal + newData().matchesWon)
+            }
+            return true
+        } else return false
     }
 
     fun getName(): String {
-        return name
+        return newData().displayName
+    }
+
+    fun getId(): Long {
+        return newData().steamUserId
     }
 
     fun getCharacter(): String {
-        return character
+        return newData().characterName
     }
 
     fun getChain(): Int {
@@ -94,47 +79,39 @@ class Player(playerData: PlayerData) {
     }
 
     fun getMatchesWon(): Int {
-        return wins
+        return newData().matchesWon
     }
 
     fun getMatchesPlayed(): Int {
-        return matches
+        return newData().matchesTotal
     }
 
     fun getLoadPercent(): Int {
-        return loadPct.toInt()
+        return newData().loadingPct
     }
 
-    private fun justWon(currWins: Int): Boolean {
-        return currWins > lastUpdate!!.matchesWon
+    private fun justWon(): Boolean {
+        return newData().matchesWon > oldData().matchesWon
     }
 
-    private fun justPlayed(currPlayed: Int): Boolean {
-        return currPlayed > lastUpdate!!.matchesPlayed
-    }
-
-    fun inLobby(flag: Boolean) {
-        inLobby = flag
-    }
-
-    fun inLobby(): Boolean {
-        return inLobby
+    private fun justPlayed(): Boolean {
+        return newData().matchesTotal > oldData().matchesTotal
     }
 
     fun getRiskRating(): String {
-        var grade = "-"
+        var grade = "?"
         if (getMatchesWon() > 0) {
-            val gradeConversion:Float = ((getMatchesWon() + getChain()) / (getMatchesPlayed() - getChain())).toFloat()
-            if (gradeConversion > 0.2) grade = "D"
-            if (gradeConversion > 0.3) grade = "D+"
-            if (gradeConversion >= 0.4) grade = "C"
-            if (gradeConversion >= 0.5) grade = "C+"
-            if (gradeConversion >= 0.6) grade = "B"
-            if (gradeConversion >= 0.8) grade = "B+"
-            if (gradeConversion >= 1.0) grade = "A"
-            if (gradeConversion >= 1.5) grade = "A+"
-            if (gradeConversion >= 2.0) grade = "S"
-            if (gradeConversion >= 2.5) grade = "S+"
+            grade = "D"
+            val gradeConversion:Float = (getMatchesWon() + getChain()).toFloat() / (getMatchesPlayed() - getChain()).toFloat()
+            if (gradeConversion >= 0.1f) grade = "D+"
+            if (gradeConversion >= 0.2f) grade = "C"
+            if (gradeConversion >= 0.3f) grade = "C+"
+            if (gradeConversion >= 0.4f) grade = "B"
+            if (gradeConversion >= 0.6f) grade = "B+"
+            if (gradeConversion >= 1.0f) grade = "A"
+            if (gradeConversion >= 1.5f) grade = "A+"
+            if (gradeConversion >= 2.0f) grade = "S"
+            if (gradeConversion >= 3.0f) grade = "S+"
         }
         return grade
     }

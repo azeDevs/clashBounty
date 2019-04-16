@@ -4,8 +4,7 @@ import kotlinx.cinterop.*
 import platform.posix.*
 
 fun main() {
-//    displayAppWindow()
-    libuiTableview()
+    displayAppWindow()
 }
 
 fun appendToTextFile(fileName: String, text: String): String {
