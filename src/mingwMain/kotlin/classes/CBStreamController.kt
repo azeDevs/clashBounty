@@ -13,17 +13,11 @@ fun writeLobbyFiles(players: List<Player>) {
                 "Bounty:\n" +
                 "${players.get(i).getBountyFormatted()}\n" +
                 "Rating:\n" +
-                "${players.get(i).getRatingLetter()}\n"
+                "${players.get(i).getRatingLetter()}\n" +
+                "Chain:\n" +
+                "${if (players.get(i).getChain()>0) players.get(i).getChain() else " "}\n"
         writeToFile("remote${i}", remote)
-    } else writeToFile("remote${i}", "SLOT ${i}\n" +
-            "Backdrop:\n" +
-            "${getFullscreen(false)}\n" +
-            "Name:\n" +
-            "\n" +
-            "Bounty:\n" +
-            "\n" +
-            "Rating:\n" +
-            "\n")
+    } else writeToFile("remote${i}", "")
 }
 
 private fun setRank(rank: String) {

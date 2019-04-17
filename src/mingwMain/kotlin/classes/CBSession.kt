@@ -86,7 +86,7 @@ class Player(playerData: PlayerData) {
 
     fun getBountyFormatted():String {
         var inStr = getBounty().toString()
-        var commas = inStr.length/3
+        var commas = if (inStr.length % 3 == 0) (inStr.length/3)-1 else inStr.length/3
         var outStr = " W$"
         for (i in 0..commas-1) outStr = if (inStr.length > 3) ",${inStr.substring(inStr.length-(3*(i+1)), inStr.length-(3*i))}${outStr}" else "${inStr.substring(inStr.length-(3*(i+1)), inStr.length-(3*i))}${outStr}"
         return inStr.substring(0, inStr.length-(3*commas)) + outStr
@@ -123,7 +123,7 @@ class Player(playerData: PlayerData) {
 
 
     fun getRatingLetter(): String {
-        var grade = "n/a"
+        var grade = "?"
         if (getMatchesWon() > 0) {
             grade = "D"
             val gradeConversion = getRating()
