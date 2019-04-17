@@ -1,6 +1,6 @@
 package classes
 
-import classes.Character.VE
+import classes.session.writeLobbyFiles
 import kotlinx.cinterop.*
 import libui.ktx.*
 import platform.posix.ctime
@@ -40,6 +40,7 @@ fun displayAppWindow() = appWindow("gearNet", 600, 400) {
             if (session.connected()) {
                 setAppStatus("CONNECTED \uD83D\uDCE1")
                 session.updatePlayerData()
+                writeLobbyFiles(session.getAll())
                 val guiUpdate = session.getAll()
                 for (i in 0..7) {
                     if (guiUpdate.size > i) {
@@ -113,11 +114,5 @@ fun logWarn(text: String) = addLog("\n$IC_WARN $text")
 fun logBool(text: String, bool: Boolean): Boolean { addLog("\n$IC_BOOL $text: ${bool}");return bool }
 
 private fun addLog(logText: String) {
-    appendToTextFile("log", logText)
-}
-
-fun getFullscreen(): String {
-    var out = ""
-    for (i in 1..96) out += "█"
-    return out
+//    writeToFile("log", logText)
 }

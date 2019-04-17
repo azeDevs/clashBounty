@@ -19,7 +19,9 @@ class Session {
 
     fun connected() = xrdApi.isXrdRunning() && xrdApi.connectToXrd()
 
-    fun getAll() = playerSessions.values.toList().sortedByDescending { item -> item.getBounty() }
+    fun getAll() = playerSessions.values.toList()
+        .sortedByDescending { item -> item.getRating() }
+        .sortedByDescending { item -> item.getBounty() }
 
     fun updatePlayerData() {
         var winner: Player? = null
@@ -28,7 +30,7 @@ class Session {
             if (data.steamUserId == 0L) playerSessions.values.forEach { session -> if (data.equals(session.getData())) session.inLobby = false }
             if (!playerSessions.containsKey(data.steamUserId)) playerSessions.put(data.steamUserId, Player(data))
             playerSessions.values.forEach { session ->
-                if (session.getId() == data.steamUserId && !data.equals(session.getData())) {
+                if (session.getSteamId() == data.steamUserId && !data.equals(session.getData())) {
                     if (session.justWon()) winner = session
                     else if (session.justPlayed()) loser = session
 
@@ -45,7 +47,6 @@ class Session {
         }
         winner = null; loser = null
     }
-
 }
 
 class Player(playerData: PlayerData) {
@@ -73,17 +74,25 @@ class Player(playerData: PlayerData) {
         } else return false
     }
 
-    fun getName() = newData().displayName
+    fun getDisplayName() = newData().displayName
 
-    fun getNameString() = if (inLobby) "${getName()}  -  [ID1${getId()}]" else "${getName()}  [ID0${getId()}]"
+    fun getNameString() = if (inLobby) "${getDisplayName()}  -  [ID1${getSteamId()}]" else "${getDisplayName()}  [ID0${getSteamId()}]"
 
-    fun getId() = newData().steamUserId
+    fun getSteamId() = newData().steamUserId
 
     fun getCharacter() = newData().characterName
 
     fun getBounty() = bounty
 
-    fun getBountyString() = if (getBounty() > 0) "Bounty: ${getBounty()} W$" else "Civilian"
+    fun getBountyFormatted():String {
+        var inStr = getBounty().toString()
+        var commas = inStr.length/3
+        var outStr = " W$"
+        for (i in 0..commas-1) outStr = if (inStr.length > 3) ",${inStr.substring(inStr.length-(3*(i+1)), inStr.length-(3*i))}${outStr}" else "${inStr.substring(inStr.length-(3*(i+1)), inStr.length-(3*i))}${outStr}"
+        return inStr.substring(0, inStr.length-(3*commas)) + outStr
+    }
+
+    fun getBountyString() = if (getBounty() > 0) "Bounty: ${getBountyFormatted()}" else "Free"
 
     fun getChain() = chain
 
@@ -110,24 +119,28 @@ class Player(playerData: PlayerData) {
         if (bounty<0) bounty = 0
     }
 
-    fun getRatingString(): String {
-        var grade = "Harmless"
+    fun getRating() = (getMatchesWon() + getChain()).toFloat() / (getMatchesPlayed() - getChain()).toFloat()
+
+
+    fun getRatingLetter(): String {
+        var grade = "n/a"
         if (getMatchesWon() > 0) {
             grade = "D"
-            val gradeConversion = (getMatchesWon() + getChain()).toFloat() / (getMatchesPlayed() - getChain()).toFloat()
+            val gradeConversion = getRating()
             if (gradeConversion >= 0.1f) grade = "D+"
             if (gradeConversion >= 0.2f) grade = "C"
             if (gradeConversion >= 0.3f) grade = "C+"
             if (gradeConversion >= 0.4f) grade = "B"
-            if (gradeConversion >= 0.6f) grade = "B+"
+            if (getMatchesWon() >= 2 && gradeConversion >= 0.6f) grade = "B+"
             if (getMatchesWon() >= 4 && gradeConversion >= 1.0f) grade = "A"
             if (getMatchesWon() >= 8 && gradeConversion >= 1.5f) grade = "A+"
-            if (getMatchesWon() >= 12 && gradeConversion >= 2.0f) grade = "S"
-            if (getMatchesWon() >= 16 && gradeConversion >= 3.0f) grade = "S+"
-            return "Risk Rating: ${grade}"
-        } else return grade
-
+            if (getMatchesWon() >= 16 && gradeConversion >= 2.0f) grade = "S"
+            if (getMatchesWon() >= 32 && gradeConversion >= 3.0f) grade = "S+"
+        }
+        return grade
     }
+
+    fun getRatingString() = "Risk Rating: ${getRatingLetter()}"
 
 }
 
