@@ -7,9 +7,10 @@ import platform.windows.HANDLE
 import platform.windows.OpenProcess
 import platform.windows.ReadProcessMemory
 
-class XrdMemReader : XrdApi {
+class MemReader : XrdApi {
 
-
+    val PROC_ALL_ACCESS: UInt = 0x438u
+    val GG_STRUCT_SIZE = 0x48
 
     override fun isXrdRunning() : Boolean {
         val procname = "GuiltyGearXrd.exe"
@@ -61,7 +62,7 @@ class XrdMemReader : XrdApi {
         } else {
             logInfo("$procname has an id of $pid")
         }
-        phandle = OpenProcess(LowLevelConstants.PROC_ALL_ACCESS, 0, pid)
+        phandle = OpenProcess(PROC_ALL_ACCESS, 0, pid)
         if (phandle == null) {
             logWarn("$procname failed to open.")
             return logBool("phandle != null", phandle != null)
@@ -118,11 +119,11 @@ class XrdMemReader : XrdApi {
 
         var playerDataSet = HashSet<PlayerData>()
         for(i in 0..8){
-            var pdoffset = (infoAddr.toLong() + (LowLevelConstants.GG_STRUCT_SIZE * i).toLong()).toCPointer<ByteVar>()
-            var buffer = nativeHeap.allocArray<ByteVar>(LowLevelConstants.GG_STRUCT_SIZE)
+            var pdoffset = (infoAddr.toLong() + (GG_STRUCT_SIZE * i).toLong()).toCPointer<ByteVar>()
+            var buffer = nativeHeap.allocArray<ByteVar>(GG_STRUCT_SIZE)
             var bytesread = nativeHeap.alloc<ULongVar>()
-            var error = ReadProcessMemory(phandle, pdoffset, buffer, LowLevelConstants.GG_STRUCT_SIZE.toULong(), bytesread.ptr)
-            var bufbytearray = buffer.pointed.readValues(LowLevelConstants.GG_STRUCT_SIZE).getBytes()
+            var error = ReadProcessMemory(phandle, pdoffset, buffer, GG_STRUCT_SIZE.toULong(), bytesread.ptr)
+            var bufbytearray = buffer.pointed.readValues(GG_STRUCT_SIZE).getBytes()
 
             if(error == 0) return emptySet()
             else if (i == 0 && bufbytearray[0xC].toInt() == 0) return emptySet()
@@ -147,14 +148,4 @@ class XrdMemReader : XrdApi {
     var infoAddr = 0L.toCPointer<ByteVar>()
     var phandle : HANDLE? = nativeHeap.alloc<IntVar>().ptr
 
-}
-
-object LowLevelConstants {
-    const val PROC_ALL_ACCESS: UInt = 0x438u
-    const val GG_STRUCT_SIZE = 0x48
-}
-
-fun truncate(name: String, length: Int): String {
-    if (name.length > length) return name.substring(0, length)
-    else return name
 }

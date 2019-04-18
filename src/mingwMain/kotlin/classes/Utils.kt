@@ -1,60 +1,20 @@
 package classes
 
-import classes.Character.getCharacterName
+import kotlinx.cinterop.CPointer
+import platform.posix.FILE
+import platform.posix.fclose
+import platform.posix.fopen
+import platform.posix.fprintf
 
-
-/**
- * Interface for Labryz to use 👍
- */
-interface XrdApi {
-    /**
-     * Check if Xrd process is running
-     *
-     * @return is a Guilty Gear Xrd REV2 process currently running
-     */
-    fun isXrdRunning(): Boolean
-
-    /**
-     * Init scan for Xrd lobby memory addresses, return if connection in progress
-     *
-     * @return a scan for the Xrd lobby memory addresses is currently in progress
-     */
-    fun connectToXrd(): Boolean
-
-    /**
-     * Check if Xrd lobby memory addresses have been located
-     *
-     * @return the Xrd lobby memory addresses have been found and stored for reference
-     */
-    fun isXrdConnected(): Boolean
-
-    /**
-     * Serve a HashMap of PlayerData, using the steamUserId as key
-     *
-     * @return a Set of the Xrd lobby's currentOverlay active players and their data
-     */
-    fun getXrdData(): Set<PlayerData>
+fun writeToFile(fileName: String, text: String) {
+    val fp: CPointer<FILE>? = fopen("${fileName}.txt" ,"w+")
+    fprintf(fp, "$text")
+    fclose(fp)
 }
 
-
-/**
- * Class object produced by [XrdMemReader]
- */
-class PlayerData(
-    val displayName: String,
-    val steamUserId: Long,
-    val characterId: Byte,
-    val matchesTotal: Int,
-    val matchesWon: Int,
-    val loadingPct: Int) {
-    val characterName: String = getCharacterName(characterId)
-    fun equals(otherData: PlayerData): Boolean {
-        return displayName.equals(otherData.displayName) &&
-                characterId.equals(otherData.characterId) &&
-                matchesTotal.equals(otherData.matchesTotal) &&
-                matchesWon.equals(otherData.matchesWon) &&
-                loadingPct.equals(otherData.loadingPct)
-    }
+fun truncate(name: String, length: Int): String {
+    if (name.length > length) return name.substring(0, length)
+    else return name
 }
 
 object Character {
@@ -79,8 +39,8 @@ object Character {
             SI -> if (initials) return "SI" else return "Sin Kiske"
             EL -> if (initials) return "EL" else return "Elpelt Valentine"
             LE -> if (initials) return "LE" else return "Leo Whitefang"
-            JO -> if (initials) return "JO" else return "Johnny"
-            JC -> if (initials) return "JC" else return "Jack-O"
+            JO -> if (initials) return "JO" else return "Johnny Sfondi"
+            JC -> if (initials) return "JC" else return "Jack-O Valentine"
             JM -> if (initials) return "JM" else return "Jam Kuradoberi"
             KU -> if (initials) return "KU" else return "Kum Haehyun"
             RV -> if (initials) return "RV" else return "Raven"

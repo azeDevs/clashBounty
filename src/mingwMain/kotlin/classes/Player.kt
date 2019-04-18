@@ -1,54 +1,5 @@
 package classes
 
-import kotlin.math.roundToInt
-
-
-class Session {
-    private val xrdApi: XrdApi = XrdMemReader()
-    private var playerSessions: MutableMap<Long, Player> = HashMap()
-    private var updateCount: Int = 0
-
-    fun getUpdateCounter(): String {
-        when (updateCount++) {
-            0 -> return ""
-            1 -> return "."
-            2 -> return ".."
-            else -> { updateCount = 0; return "..." }
-        }
-    }
-
-    fun connected() = xrdApi.isXrdRunning() && xrdApi.connectToXrd()
-
-    fun getAll() = playerSessions.values.toList()
-        .sortedByDescending { item -> item.getRating() }
-        .sortedByDescending { item -> item.getBounty() }
-
-    fun updatePlayerData() {
-        var winner: Player? = null
-        var loser: Player? = null
-        xrdApi.getXrdData().forEach { data ->
-            if (data.steamUserId == 0L) playerSessions.values.forEach { session -> if (data.equals(session.getData())) session.inLobby = false }
-            if (!playerSessions.containsKey(data.steamUserId)) playerSessions.put(data.steamUserId, Player(data))
-            playerSessions.values.forEach { session ->
-                if (session.getSteamId() == data.steamUserId && !data.equals(session.getData())) {
-                    if (session.justWon()) winner = session
-                    else if (session.justPlayed()) loser = session
-
-                    if (winner != null && loser != null) {
-                        if (loser!!.getBounty() > 10) {
-                            winner?.changeBounty(loser?.getBounty()?.times(0.25f)!!.roundToInt())
-                            loser?.changeBounty(-loser?.getBounty()?.times(0.5f)!!.roundToInt())
-                        }
-                    }
-
-                    session.update(data)
-                }
-            }
-        }
-        winner = null; loser = null
-    }
-}
-
 class Player(playerData: PlayerData) {
 
     private var bounty = 0
@@ -57,30 +8,29 @@ class Player(playerData: PlayerData) {
     var inLobby =  true
 
     private fun oldData() = data.first
-    private fun newData() = data.second
-    fun getData() = newData()
+    fun getData() = data.second
 
     fun update(updatedData: PlayerData):Boolean {
-        data = Pair(newData(), updatedData)
+        data = Pair(getData(), updatedData)
         inLobby = true
-        if (!oldData().equals(newData())) {
+        if (!oldData().equals(getData())) {
             if (justWon()) {
-                bounty += 100 * (++chain+1) * (newData().matchesTotal + newData().matchesWon)
+                bounty += 100 * (++chain+1) * (getData().matchesTotal + getData().matchesWon)
             } else if (justPlayed()) {
                 if (chain < 2) chain = 0; else chain -= 2
-                bounty += 10 * (chain+1) * (newData().matchesTotal + newData().matchesWon)
+                bounty += 10 * (chain+1) * (getData().matchesTotal + getData().matchesWon)
             }
             return true
         } else return false
     }
 
-    fun getDisplayName() = newData().displayName
+    fun getDisplayName() = getData().displayName
 
     fun getNameString() = if (inLobby) "${getDisplayName()}  -  [ID1${getSteamId()}]" else "${getDisplayName()}  [ID0${getSteamId()}]"
 
-    fun getSteamId() = newData().steamUserId
+    fun getSteamId() = getData().steamUserId
 
-    fun getCharacter() = newData().characterName
+    fun getCharacter() = getData().characterName
 
     fun getBounty() = bounty
 
@@ -96,13 +46,13 @@ class Player(playerData: PlayerData) {
 
     fun getChain() = chain
 
-    fun getMatchesWon() = newData().matchesWon
+    fun getMatchesWon() = getData().matchesWon
 
-    fun getMatchesPlayed() = newData().matchesTotal
+    fun getMatchesPlayed() = getData().matchesTotal
 
     fun getRecordString() = "C:${getChain()}  /  W:${getMatchesWon()}  /  M:${getMatchesPlayed()}"
 
-    fun getLoadPercent() = newData().loadingPct
+    fun getLoadPercent() = getData().loadingPct
 
     fun getStatusString(): String {
         if (getLoadPercent() == 0) return "Standby: ${getLoadPercent()}%"
@@ -110,9 +60,9 @@ class Player(playerData: PlayerData) {
         else return "Loading: ${getLoadPercent()}%"
     }
 
-    fun justWon() = newData().matchesWon > oldData().matchesWon
+    fun justWon() = getData().matchesWon > oldData().matchesWon
 
-    fun justPlayed() = newData().matchesTotal > oldData().matchesTotal
+    fun justPlayed() = getData().matchesTotal > oldData().matchesTotal
 
     fun changeBounty(amount:Int) {
         bounty += amount
@@ -123,7 +73,7 @@ class Player(playerData: PlayerData) {
 
 
     fun getRatingLetter(): String {
-        var grade = "?"
+        var grade = " "
         if (getMatchesWon() > 0) {
             grade = "D"
             val gradeConversion = getRating()
@@ -143,4 +93,3 @@ class Player(playerData: PlayerData) {
     fun getRatingString() = "Risk Rating: ${getRatingLetter()}"
 
 }
-
