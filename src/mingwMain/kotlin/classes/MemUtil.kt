@@ -17,12 +17,7 @@ import platform.windows.ReadProcessMemory
 // Address: "GuiltyGearXrd.exe"+01B18C7C
 // Offset: 9CC
 
-class MemData(val description:String, val address:Long, val offset:Long, val varType:Int) {
-
-    var dataInt:Int = -1
-    var dataLong:Long = -1
-    var dataString:String = "null"
-}
+class MemData(val address:Long, val offset:Long, val varType:Int) { var dataInt:Int = -1 }
 
 fun getMemData(memData:MemData): MemData {
 
@@ -34,14 +29,10 @@ fun getMemData(memData:MemData): MemData {
 
     val procname = "GuiltyGearXrd.exe"
     var snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)
-    val pe32size: UInt = sizeOf<PROCESSENTRY32>().toUInt()
-    val pe32ptr = nativeHeap.alloc<PROCESSENTRY32>()
-    val pe32 : PROCESSENTRY32 = pe32ptr
-    pe32.dwSize = pe32size
+    val pe32 : PROCESSENTRY32 = nativeHeap.alloc()
+    pe32.dwSize = sizeOf<PROCESSENTRY32>().toUInt()
     var pid : UInt = 0u
-    if (Process32First(snap, pe32.ptr) == 0) {
-        logWarn("Process32First failed!")
-    }
+    if (Process32First(snap, pe32.ptr) == 0) logWarn("Process32First failed!")
     while (Process32Next(snap, pe32.ptr) != 0) {
         val entryname = pe32.szExeFile.toKString()
         if (procname.equals(entryname)) {
@@ -60,41 +51,30 @@ fun getMemData(memData:MemData): MemData {
 
     infoAddr = 0L.toCPointer()
     while(Module32Next(hSnap, mod.ptr) != 0){
-        val entryname = mod.szModule.toKString()
-        if (procname.equals(entryname)) {
+        if (procname.equals(mod.szModule.toKString())) {
             CloseHandle(hSnap)
-            var modbase = mod.modBaseAddr
-            var modlong = modbase.toLong()
+            var modlong = mod.modBaseAddr.toLong()
             var modoffset = (modlong + memData.address).toCPointer<ByteVar>()
             var buffer = nativeHeap.alloc<IntVar>()
             var bytesread = nativeHeap.alloc<ULongVar>()
             var error = ReadProcessMemory(phandle, modoffset, buffer.ptr, 4, bytesread.ptr)
-            if (error == 0) {
-                infoAddr = 0L.toCPointer()
-                continue
-            }
+            if (error == 0) { infoAddr = 0L.toCPointer(); continue }
             var newlptr = buffer.value.toLong()
             infoAddr = (newlptr + memData.offset).toCPointer()
         }
     }
 
     logFunc("getXrdData")
-
-
     if (!(infoAddr != null && !infoAddr!!.equals(0L.toCPointer<ByteVar>()))) return memData
-    var pdoffset = (infoAddr.toLong() + memData.varType.toLong()).toCPointer<ByteVar>()
     var buffer = nativeHeap.allocArray<ByteVar>(memData.varType)
     var bytesread = nativeHeap.alloc<ULongVar>()
-    var error = ReadProcessMemory(phandle, pdoffset, buffer, memData.varType.toULong(), bytesread.ptr)
-    var bufbytearray = buffer.pointed.readValues(memData.varType).getBytes()
-
+    var error = ReadProcessMemory(phandle, infoAddr, buffer, memData.varType.toULong(), bytesread.ptr)
+    var bufbytearray: ByteArray = buffer.pointed.readValues(memData.varType).getBytes()
     if(error == 0) return memData
-
     var outData = 0
     if (memData.varType == 2) for(i in 0..1) outData += bufbytearray[1-i].toInt() shl i
     if (memData.varType == 4) for(i in 0..3) outData += bufbytearray[3-i].toInt() shl i
     if (memData.varType == 8) for(i in 0..7) outData += bufbytearray[7-i].toInt() shl i
-
     memData.dataInt = outData
 
     return memData
