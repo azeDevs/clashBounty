@@ -1,5 +1,6 @@
 package classes.session
 
+import classes.Character.getCharacterName
 import classes.Player
 import classes.writeToFile
 
@@ -15,7 +16,13 @@ fun writeLobbyFiles(players: List<Player>) {
                 "Rating:\n" +
                 "${players.get(i).getRatingLetter()}\n" +
                 "Chain:\n" +
-                "${if (players.get(i).getChain()>0) players.get(i).getChain() else " "}\n"
+                "${if (players.get(i).getChain()>0) players.get(i).getChain() else " "}\n" +
+                "Change:\n" +
+                "${players.get(i).getChangeString()}\n" +
+                "Character:\n" +
+                "${players.get(i).getCharacter(true)}\n" +
+                "${players.get(i).getCharacter(false)}\n" +
+                ""
         writeToFile("remote${i}", remote)
     } else writeToFile("remote${i}", "")
 }

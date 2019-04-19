@@ -22,31 +22,43 @@ class Session {
         .sortedByDescending { item -> item.getBounty() }
 
     fun updatePlayerData():Boolean {
-        var refresh = false
-        var winner: Player? = null
-        var loser: Player? = null
+        var loserChange = 0
+        var winnerChange = 0
+        // reset all data to be updated
         xrdApi.getXrdData().forEach { data ->
-            if (data.steamUserId == 0L) playerSessions.values.forEach { session -> if (data.equals(session.getData())) session.inLobby = false }
-
-            if (!playerSessions.containsKey(data.steamUserId)) playerSessions.put(data.steamUserId, Player(data))
-            playerSessions.values.forEach { session ->
-                if (session.getSteamId() == data.steamUserId && !data.equals(session.getData())) {
-                    refresh = true
-                    if (session.justWon()) winner = session
-                    else if (session.justPlayed()) loser = session
-                    session.update(data)
+            // Add new player if they didn't previously exist
+            if (!playerSessions.containsKey(data.steamUserId)) {
+                playerSessions.put(data.steamUserId, Player(data))
+            }
+            // Find the loser to solve for changes to bounties
+            playerSessions.values.forEach { s ->
+                if (s.getSteamId() == data.steamUserId) {
+                    s.swapDataWithLatest(data)
+                    if (s.justLost()) {
+                        loserChange = -(s.getBounty().div(2))
+                        winnerChange = (s.getBounty().div(4))
+                    }
+                }
+            }
+            //
+            playerSessions.values.forEach { s ->
+                if (s.getSteamId() == data.steamUserId) {
+                    if (s.justWon()) {
+                        s.changeChain(1)
+                        winnerChange += s.getChain() * (s.getData().matchesTotal + s.getData().matchesWon) * 100
+                        s.changeBounty(winnerChange)
+                    }
+                    else if (s.justLost()) {
+                        s.changeChain(-2)
+                        loserChange += s.getChain() * (s.getData().matchesTotal + s.getData().matchesWon) * 10
+                        s.changeBounty(loserChange)
+                    }
                 }
             }
         }
-
-        if (winner != null && loser != null) {
-            if (loser!!.getBounty() > 10) {
-                winner?.changeBounty(loser?.getBounty()?.div(4)!!)
-                loser?.changeBounty(-(loser?.getBounty()?.div(2)!!))
-            }
-        }
-        winner = null; loser = null
-        return refresh
+        val someRedraw = playerSessions.values.filter { s -> s.shouldRedraw() }.toList().size > 0
+        if (someRedraw) playerSessions.values.forEach { s -> if (!s.justPlayed()) s.changeBounty(0) }
+        return someRedraw
     }
 }
 

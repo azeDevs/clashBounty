@@ -1,50 +1,49 @@
 package classes
 
+import classes.Character.getCharacterName
+
 class Player(playerData: PlayerData) {
 
     private var bounty = 0
     private var chain = 0
-    private var data = Pair(playerData, playerData)
-    var inLobby =  true
+    private var change = 0
+    private var data = Pair(playerData,playerData)
 
     private fun oldData() = data.first
     fun getData() = data.second
 
-    fun update(updatedData: PlayerData):Boolean {
-        data = Pair(getData(), updatedData)
-        inLobby = true
-        if (!oldData().equals(getData())) {
-            if (justWon()) {
-                bounty += 100 * (++chain+1) * (getData().matchesTotal + getData().matchesWon)
-            } else if (justPlayed()) {
-                if (chain < 2) chain = 0; else chain -= 2
-                bounty += 10 * (chain+1) * (getData().matchesTotal + getData().matchesWon)
-            }
-            return true
-        } else return false
-    }
+    fun swapDataWithLatest(updatedData: PlayerData) { data = Pair(getData(), updatedData) }
+
+    fun shouldRedraw() = !oldData().equals(getData())
 
     fun getDisplayName() = getData().displayName
 
-    fun getNameString() = if (inLobby) "${getDisplayName()}  -  [ID1${getSteamId()}]" else "${getDisplayName()}  [ID0${getSteamId()}]"
+    fun getNameString() = "${getDisplayName()}  -  [ID${getSteamId()}]"
 
     fun getSteamId() = getData().steamUserId
 
-    fun getCharacter() = getData().characterName
+    fun getCharacterId() = getData().characterId
+
+    fun getCharacter(shortened:Boolean) = getCharacterName(getData().characterId, shortened)
 
     fun getBounty() = bounty
 
-    fun getBountyFormatted():String {
-        var inStr = getBounty().toString()
-        var commas = if (inStr.length % 3 == 0) (inStr.length/3)-1 else inStr.length/3
-        var outStr = " W$"
-        for (i in 0..commas-1) outStr = if (inStr.length > 3) ",${inStr.substring(inStr.length-(3*(i+1)), inStr.length-(3*i))}${outStr}" else "${inStr.substring(inStr.length-(3*(i+1)), inStr.length-(3*i))}${outStr}"
-        return inStr.substring(0, inStr.length-(3*commas)) + outStr
-    }
+    fun getBountyFormatted() = "${addCommas(getBounty().toString())} W$"
 
-    fun getBountyString() = if (getBounty() > 0) "Bounty: ${getBountyFormatted()}" else "Free"
+    fun getBountyString() = if (getBounty() > 0) "Bounty: ${getBountyFormatted()} (${change})" else "Free"
 
     fun getChain() = chain
+
+    fun changeChain(amount:Int) {
+        chain += amount
+        if (chain < 0) chain = 0
+    }
+
+    fun getChangeString(): String {
+        if (change > 0) return "+${addCommas(change.toString())} W$\n "
+        else if (change < 0) return " \n${addCommas(change.toString())} W$"
+        else return " \n "
+    }
 
     fun getMatchesWon() = getData().matchesWon
 
@@ -60,11 +59,14 @@ class Player(playerData: PlayerData) {
         else return "Loading: ${getLoadPercent()}%"
     }
 
-    fun justWon() = getData().matchesWon > oldData().matchesWon
-
     fun justPlayed() = getData().matchesTotal > oldData().matchesTotal
 
+    fun justLost() = getData().matchesWon == oldData().matchesWon && justPlayed()
+
+    fun justWon() = getData().matchesWon > oldData().matchesWon && justPlayed()
+
     fun changeBounty(amount:Int) {
+        change = amount
         bounty += amount
         if (bounty<0) bounty = 0
     }
@@ -81,11 +83,11 @@ class Player(playerData: PlayerData) {
             if (gradeConversion >= 0.2f) grade = "C"
             if (gradeConversion >= 0.3f) grade = "C+"
             if (gradeConversion >= 0.4f) grade = "B"
-            if (getMatchesWon() >= 2 && gradeConversion >= 0.6f) grade = "B+"
-            if (getMatchesWon() >= 4 && gradeConversion >= 1.0f) grade = "A"
-            if (getMatchesWon() >= 8 && gradeConversion >= 1.5f) grade = "A+"
-            if (getMatchesWon() >= 16 && gradeConversion >= 2.0f) grade = "S"
-            if (getMatchesWon() >= 32 && gradeConversion >= 3.0f) grade = "S+"
+            if (getMatchesWon() >= 4 && gradeConversion >= 0.6f) grade = "B+"
+            if (getMatchesWon() >= 8 && gradeConversion >= 1.0f) grade = "A"
+            if (getMatchesWon() >= 16 && gradeConversion >= 1.5f) grade = "A+"
+            if (getMatchesWon() >= 32 && gradeConversion >= 2.0f) grade = "S"
+            if (getMatchesWon() >= 64 && gradeConversion >= 3.0f) grade = "S+"
         }
         return grade
     }

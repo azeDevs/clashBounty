@@ -47,7 +47,6 @@ class PlayerData(
     val matchesTotal: Int,
     val matchesWon: Int,
     val loadingPct: Int) {
-    val characterName: String = getCharacterName(characterId)
     fun equals(otherData: PlayerData): Boolean {
         return displayName.equals(otherData.displayName) &&
                 characterId.equals(otherData.characterId) &&
@@ -56,5 +55,6 @@ class PlayerData(
                 loadingPct.equals(otherData.loadingPct)
     }
 }
+
 
 
