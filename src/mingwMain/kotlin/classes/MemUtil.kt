@@ -69,13 +69,17 @@ fun getMemData(memData:MemData): MemData {
     var buffer = nativeHeap.allocArray<ByteVar>(memData.varType)
     var bytesread = nativeHeap.alloc<ULongVar>()
     var error = ReadProcessMemory(phandle, infoAddr, buffer, memData.varType.toULong(), bytesread.ptr)
-    var bufbytearray: ByteArray = buffer.pointed.readValues(memData.varType).getBytes()
     if(error == 0) return memData
-    var outData = 0
-    if (memData.varType == 2) for(i in 0..1) outData += bufbytearray[1-i].toInt() shl i
-    if (memData.varType == 4) for(i in 0..3) outData += bufbytearray[3-i].toInt() shl i
-    if (memData.varType == 8) for(i in 0..7) outData += bufbytearray[7-i].toInt() shl i
-    memData.dataInt = outData
+    if(memData.varType == 4) {
+        var intbuffer = buffer.reinterpret<IntVar>()
+        memData.dataInt = intbuffer.pointed.value
+        return memData
+    }
+    /*var outData = 0L
+    if (memData.varType == 2) for(i in 0..1) outData += bufbytearray[1-i].toUByte().toInt() shl i
+    if (memData.varType == 4) for(i in 0..3) outData += bufbytearray[3-i].toUByte().toInt() shl i
+    if (memData.varType == 8) for(i in 0..7) outData += bufbytearray[7-i].toUByte().toInt() shl i
+    memData.dataInt = outData.toInt()*/
 
     return memData
 }
