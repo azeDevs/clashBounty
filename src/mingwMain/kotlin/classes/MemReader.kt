@@ -130,9 +130,8 @@ class MemReader : XrdApi {
             else if (bufbytearray[0xC].toInt() == 0) continue
 
             var dispname = bufbytearray.stringFromUtf8(0xC, 0x24).trim('\u0000')
-            var steamid = 0L
-            for(j in 0..7) steamid += bufbytearray[7-j].toLong() shl j
-
+            var steamidptr = buffer.reinterpret<LongVar>()
+            var steamid = steamidptr.pointed.value
             var playerData = PlayerData(
                 displayName = truncate(dispname, 24),
                 steamUserId = steamid,
