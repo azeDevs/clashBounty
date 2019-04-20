@@ -75,7 +75,7 @@ class Player(playerData: PlayerData) {
 
 
     fun getRatingLetter(): String {
-        var grade = " "
+        var grade = "-"
         if (getMatchesWon() > 0) {
             grade = "D"
             val gradeConversion = getRating()
