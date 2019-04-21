@@ -17,7 +17,13 @@ import platform.windows.ReadProcessMemory
 // Address: "GuiltyGearXrd.exe"+01B18C7C
 // Offset: 9CC
 
-class MemData(val address:Long, val offset:Long, val varType:Int) { var dataInt:Int = -1 }
+class MemData(val description:String, val address:Long, val offset:List<Long>) { var dataInt:Int = -1 }
+
+val ML = arrayOf(
+    MemData("Player 1 HP", 0x01B18C78L, listOf(0x9CCL)),
+    MemData("Player 2 HP", 0x01B18C7CL, listOf(0x9CCL)),
+    MemData("Match Timer", 0x0177A8ACL, listOf(0x708L, 0x4CL, 0x450L))
+)
 
 fun getMemData(memData:MemData): MemData {
 
@@ -26,6 +32,7 @@ fun getMemData(memData:MemData): MemData {
     var phandle: HANDLE?
 
     val PROC_ALL_ACCESS: UInt = 0x438u
+    val FOUR_BYTE = 4
 
     val procname = "GuiltyGearXrd.exe"
     var snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)
@@ -60,26 +67,18 @@ fun getMemData(memData:MemData): MemData {
             var error = ReadProcessMemory(phandle, modoffset, buffer.ptr, 4, bytesread.ptr)
             if (error == 0) { infoAddr = 0L.toCPointer(); continue }
             var newlptr = buffer.value.toLong()
-            infoAddr = (newlptr + memData.offset).toCPointer()
+            infoAddr = (newlptr + memData.offset.get(0)).toCPointer()
         }
     }
 
     logFunc("getXrdData")
     if (!(infoAddr != null && !infoAddr!!.equals(0L.toCPointer<ByteVar>()))) return memData
-    var buffer = nativeHeap.allocArray<ByteVar>(memData.varType)
+    var buffer = nativeHeap.allocArray<ByteVar>(FOUR_BYTE)
     var bytesread = nativeHeap.alloc<ULongVar>()
-    var error = ReadProcessMemory(phandle, infoAddr, buffer, memData.varType.toULong(), bytesread.ptr)
+    var error = ReadProcessMemory(phandle, infoAddr, buffer, FOUR_BYTE.toULong(), bytesread.ptr)
     if(error == 0) return memData
-    if(memData.varType == 4) {
-        var intbuffer = buffer.reinterpret<IntVar>()
-        memData.dataInt = intbuffer.pointed.value
-        return memData
-    }
-    /*var outData = 0L
-    if (memData.varType == 2) for(i in 0..1) outData += bufbytearray[1-i].toUByte().toInt() shl i
-    if (memData.varType == 4) for(i in 0..3) outData += bufbytearray[3-i].toUByte().toInt() shl i
-    if (memData.varType == 8) for(i in 0..7) outData += bufbytearray[7-i].toUByte().toInt() shl i
-    memData.dataInt = outData.toInt()*/
 
+    var intbuffer = buffer.reinterpret<IntVar>()
+    memData.dataInt = intbuffer.pointed.value
     return memData
 }

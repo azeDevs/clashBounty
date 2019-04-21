@@ -18,7 +18,7 @@ class Player(playerData: PlayerData) {
 
     fun getDisplayName() = getData().displayName
 
-    fun getNameString() = "${getDisplayName()}  -  [ID${getSteamId()}]"
+    fun getNameString() = "${getDisplayName()}  -  [ Steam ID: ${getSteamId()} ]"
 
     fun getSteamId() = getData().steamUserId
 
@@ -37,6 +37,7 @@ class Player(playerData: PlayerData) {
     fun changeChain(amount:Int) {
         chain += amount
         if (chain < 0) chain = 0
+        if (chain > 8) chain = 8
     }
 
     fun getChangeString(): String {

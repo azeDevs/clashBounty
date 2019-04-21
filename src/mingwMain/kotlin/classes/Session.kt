@@ -34,23 +34,25 @@ class Session {
             playerSessions.values.forEach { s ->
                 if (s.getSteamId() == data.steamUserId) {
                     s.swapDataWithLatest(data)
-                    if (s.justLost()) {
+                    if (s.justLost() && s.getChain() > 0) {
                         loserChange = -(s.getBounty().div(2))
                         winnerChange = (s.getBounty().div(4))
+                    } else if (s.justLost() && s.getChain() <= 0) {
+                        loserChange = -s.getBounty()
+                        winnerChange = s.getBounty().div(2)
                     }
                 }
             }
-            //
+
             playerSessions.values.forEach { s ->
                 if (s.getSteamId() == data.steamUserId) {
                     if (s.justWon()) {
                         s.changeChain(1)
-                        winnerChange += s.getChain() * (s.getData().matchesTotal + s.getData().matchesWon) * 100
+                        winnerChange += (s.getChain()*s.getChain()) * (s.getData().matchesTotal + s.getData().matchesWon) * 100
                         s.changeBounty(winnerChange)
-                    }
-                    else if (s.justLost()) {
+                    } else if (s.justLost()) {
                         s.changeChain(-2)
-                        loserChange += s.getChain() * (s.getData().matchesTotal + s.getData().matchesWon) * 10
+                        loserChange += (s.getChain()*s.getChain()) * (s.getData().matchesTotal + s.getData().matchesWon) * 10
                         s.changeBounty(loserChange)
                     }
                 }

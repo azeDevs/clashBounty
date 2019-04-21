@@ -60,21 +60,21 @@ class MemReader : XrdApi {
             logWarn("$procname not open!")
             return logBool("pid != 0u", pid != 0u)
         } else {
-            logInfo("$procname has an id of $pid")
+            println("$procname has an id of $pid")
         }
         phandle = OpenProcess(PROC_ALL_ACCESS, 0, pid)
         if (phandle == null) {
             logWarn("$procname failed to open.")
             return logBool("phandle != null", phandle != null)
         } else {
-            logInfo("$procname was opened!")
+            println("$procname was opened!")
         }
         infoAddr = getDataAddr(pid, "GuiltyGearXrd.exe", phandle)
         if(infoAddr?.toLong() == 0L) {
             logWarn("Failed to find Lobby")
             return logBool("infoAddr?.toLong() != 0L", infoAddr?.toLong() != 0L)
         }
-        logInfo("Lobby Data Address: " + infoAddr.toLong().toString(16))
+        println("Lobby Data Address: " + infoAddr.toLong().toString(16))
         return true
     }
 

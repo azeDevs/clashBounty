@@ -1,11 +1,8 @@
 package classes
 
 import classes.session.writeLobbyFiles
-import kotlinx.cinterop.*
+import kotlinx.cinterop.memScoped
 import libui.ktx.*
-import platform.posix.ctime
-import platform.posix.time
-import platform.posix.time_tVar
 
 fun main() {
     displayAppWindow()
@@ -13,28 +10,33 @@ fun main() {
 
 private var statusText: String = "DISCONNECTED ❌"
 private var guiApi: MutableList<PlayerGui> = ArrayList()
+private var dataFields: MutableList<DataGui> = ArrayList()
 
 lateinit private var debugButton: Button
-lateinit private var debugText0: TextField
-lateinit private var debugText1: TextField
 lateinit private var debugScroll: TextArea
 var showhud = true
+var forcehud = false
 
 fun displayAppWindow() = appWindow("gearNet", 600, 400) {
     val session = Session()
     hbox {
         vbox {
-            hbox { debugButton = button("Scoreboard: ENABLED") { stretchy = true
+            debugButton = button("Scoreboard: AUTO") {
                 action {
                     showhud = !showhud
+                    forcehud = true
                     if (showhud) debugButton.text = "Scoreboard: ENABLED"
                     else debugButton.text = "Scoreboard: DISABLED"
                     writeLobbyFiles(session.getAll())
                 }
-            } }
-            hbox { debugText0 = textfield { readonly = true; enabled = false; label("Player 1 HP") } }
-            hbox { debugText1 = textfield { readonly = true; enabled = false; label("Player 2 HP") } }
-            debugScroll = textarea(true) { readonly = true; stretchy = true }
+            }
+            for (i in 0..ML.size-1) {
+                dataFields.add(DataGui())
+                dataFields.get(i).dataSource = ML.get(i)
+                dataFields.get(i).dataField = textfield { readonly = true; value = "${ML.get(i).description}:"; enabled = false; padded = false }
+            }
+
+            debugScroll = textarea(true) { readonly = true; stretchy = true; }
         }
         vbox { stretchy = true
             for (i in 0..7) {
@@ -52,15 +54,14 @@ fun displayAppWindow() = appWindow("gearNet", 600, 400) {
                 }
             }
         }
-    }
 
+    }
     onTimer(256) {
         memScoped {
             if (session.connected()) {
                 setAppStatus("CONNECTED \uD83D\uDCE1")
-                debugText0.value = getMemData(MemData(0x01B18C78L, 0x9CCL, 4)).dataInt.toString()
-                debugText1.value = getMemData(MemData(0x01B18C7CL, 0x9CCL, 4)).dataInt.toString()
-                if (session.updatePlayerData() || guiApi.get(0).playerGroup.title.equals("")) {
+
+                if (session.updatePlayerData() || guiApi.get(0).playerGroup.title.equals("") || solveForShowHud()) {
                     writeLobbyFiles(session.getAll())
                     updateAppUi(session.getAll())
                 }
@@ -69,6 +70,31 @@ fun displayAppWindow() = appWindow("gearNet", 600, 400) {
         title = "gearNet - $statusText ${session.getUpdateCounter()}"
         true
     }
+}
+
+private fun solveForShowHud(): Boolean {
+    var wasSwitched = false
+
+    for (i in 0..ML.size-1) dataFields.get(i).dataField.value = "${dataFields.get(i).dataSource.description}: ${getMemData(dataFields.get(i).dataSource).dataInt}"
+
+    // Toggle scoreboard on when HP values are no longer valid
+    val p1hp = getMemData(MemData("p1hp", 0x01B18C78L, listOf(0x9CCL))).dataInt
+    val p2hp = getMemData(MemData("p2hp", 0x01B18C7CL, listOf(0x9CCL))).dataInt
+    if (p1hp >= 0 && p1hp <= 420 && p2hp >= 0 && p2hp <= 420) {
+        if (showhud && !forcehud) {
+            wasSwitched = true
+            showhud = false
+        }
+    } else {
+        if (!showhud) {
+            wasSwitched = true
+            showhud = true
+        }
+        forcehud = false
+        debugButton.text = "Scoreboard: AUTO"
+    }
+    if (wasSwitched) forcehud = false
+    return wasSwitched
 }
 
 private fun updateAppUi(uiUpdate: List<Player>) {
@@ -112,12 +138,16 @@ class PlayerGui {
     lateinit var rating: TextField
     lateinit var status: TextField
 }
+class DataGui {
+    lateinit var dataSource: MemData
+    lateinit var dataField: TextField
+}
 
 private val IC_INFO = "◆ "
 private val IC_BOOL = "◑ "
 private val IC_FUNC = "▶ "
 private val IC_WARN = "\uD83D\uDCA3 "
-fun logInfo(text: String) = IC_INFO //addLog("\n$IC_INFO $text")
+fun logInfo(text: String) = addLog("$IC_INFO $text\n")
 fun logFunc(text: String) = IC_INFO //addLog("\n$IC_FUNC $text")
 fun logWarn(text: String) = IC_INFO //addLog("\n$IC_WARN $text")
 fun logBool(text: String, bool: Boolean): Boolean {
