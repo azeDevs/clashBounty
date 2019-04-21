@@ -58,8 +58,8 @@ fun displayAppWindow() = appWindow("gearNet", 600, 400) {
         memScoped {
             if (session.connected()) {
                 setAppStatus("CONNECTED \uD83D\uDCE1")
-                debugText0.value = getMemData(MemData(0x01B18C78L, 0x9CCL, 4)).dataInt.toString()
-                debugText1.value = getMemData(MemData(0x01B18C7CL, 0x9CCL, 4)).dataInt.toString()
+                debugText0.value = getMemData(MemData(longArrayOf(0x01B18C78L, 0x9CCL), 4)).data.toString()
+                debugText1.value = getMemData(MemData(longArrayOf(0x01B18C7CL, 0x9CCL), 4)).data.toString()
                 if (session.updatePlayerData() || guiApi.get(0).playerGroup.title.equals("")) {
                     writeLobbyFiles(session.getAll())
                     updateAppUi(session.getAll())
