@@ -17,22 +17,21 @@ import platform.windows.ReadProcessMemory
 // Address: "GuiltyGearXrd.exe"+01B18C7C
 // Offset: 9CC
 
-class MemData(val description:String, val address:Long, val offset:List<Long>) { var dataInt:Int = -1 }
+class MemData(val description:String, val offsets : LongArray, val varSize : Int) { var data : Long = -1L }
 
 val ML = arrayOf(
-    MemData("Player 1 HP", 0x01B18C78L, listOf(0x9CCL)),
-    MemData("Player 2 HP", 0x01B18C7CL, listOf(0x9CCL)),
-    MemData("Match Timer", 0x0177A8ACL, listOf(0x708L, 0x4CL, 0x450L))
+    MemData("Player 1 HP", longArrayOf(0x01B18C78L, 0x9CCL), 4),
+    MemData("Player 2 HP", longArrayOf(0x01B18C7CL, 0x9CCL), 4),
+    MemData("Match Timer", longArrayOf(0x0177A8ACL, 0x708L, 0x4CL, 0x450L), 4)
 )
 
 fun getMemData(memData:MemData): MemData {
 
     // CONNECT
-    var infoAddr: CPointer<ByteVar>?
+    var dataPointer: CPointer<ByteVar>?
     var phandle: HANDLE?
 
     val PROC_ALL_ACCESS: UInt = 0x438u
-    val FOUR_BYTE = 4
 
     val procname = "GuiltyGearXrd.exe"
     var snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)
@@ -50,35 +49,43 @@ fun getMemData(memData:MemData): MemData {
     CloseHandle(snap)
     phandle = OpenProcess(PROC_ALL_ACCESS, 0, pid)
 
-    // GET ADDR
+
     logFunc("getDataAddr")
     var mod = nativeHeap.alloc<MODULEENTRY32>()
     mod.dwSize = sizeOf<MODULEENTRY32>().toUInt()
     var hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pid)
 
-    infoAddr = 0L.toCPointer()
+    dataPointer = 0L.toCPointer()
     while(Module32Next(hSnap, mod.ptr) != 0){
         if (procname.equals(mod.szModule.toKString())) {
             CloseHandle(hSnap)
-            var modlong = mod.modBaseAddr.toLong()
-            var modoffset = (modlong + memData.address).toCPointer<ByteVar>()
-            var buffer = nativeHeap.alloc<IntVar>()
-            var bytesread = nativeHeap.alloc<ULongVar>()
-            var error = ReadProcessMemory(phandle, modoffset, buffer.ptr, 4, bytesread.ptr)
-            if (error == 0) { infoAddr = 0L.toCPointer(); continue }
-            var newlptr = buffer.value.toLong()
-            infoAddr = (newlptr + memData.offset.get(0)).toCPointer()
+            dataPointer = (mod.modBaseAddr.toLong() + memData.offsets[0]).toCPointer<ByteVar>()
+            var offsetlist = memData.offsets.drop(1)
+            while (offsetlist.size > 0) {
+                var buffer = nativeHeap.alloc<UIntVar>()
+                var bytesread = nativeHeap.alloc<ULongVar>()
+                var error = ReadProcessMemory(phandle, dataPointer, buffer.ptr, 4, bytesread.ptr)
+                if (error == 0) {
+                    dataPointer = 0L.toCPointer()
+                    break
+                }
+                var newlptr = buffer.value.toLong()
+                dataPointer = (newlptr + offsetlist[0]).toCPointer()
+                offsetlist = offsetlist.drop(1)
+            }
         }
     }
 
     logFunc("getXrdData")
-    if (!(infoAddr != null && !infoAddr!!.equals(0L.toCPointer<ByteVar>()))) return memData
-    var buffer = nativeHeap.allocArray<ByteVar>(FOUR_BYTE)
+    if (!(dataPointer != null && !dataPointer!!.equals(0L.toCPointer<ByteVar>()))) return memData
+    var buffer = nativeHeap.allocArray<ByteVar>(memData.varSize)
     var bytesread = nativeHeap.alloc<ULongVar>()
-    var error = ReadProcessMemory(phandle, infoAddr, buffer, FOUR_BYTE.toULong(), bytesread.ptr)
+    var error = ReadProcessMemory(phandle, dataPointer, buffer, memData.varSize.toULong(), bytesread.ptr)
     if(error == 0) return memData
-
-    var intbuffer = buffer.reinterpret<IntVar>()
-    memData.dataInt = intbuffer.pointed.value
+    when (memData.varSize) {
+        1 -> memData.data = buffer.reinterpret<ByteVar>().pointed.value.toUByte().toLong()
+        2 -> memData.data = buffer.reinterpret<ShortVar>().pointed.value.toUShort().toLong()
+        4 -> memData.data = buffer.reinterpret<IntVar>().pointed.value.toUInt().toLong()
+    }
     return memData
 }

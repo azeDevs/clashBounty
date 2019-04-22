@@ -75,11 +75,11 @@ fun displayAppWindow() = appWindow("gearNet", 600, 400) {
 private fun solveForShowHud(): Boolean {
     var wasSwitched = false
 
-    for (i in 0..ML.size-1) dataFields.get(i).dataField.value = "${dataFields.get(i).dataSource.description}: ${getMemData(dataFields.get(i).dataSource).dataInt}"
+    for (i in 0..ML.size-1) dataFields.get(i).dataField.value = "${dataFields.get(i).dataSource.description}: ${getMemData(dataFields.get(i).dataSource).data}"
 
     // Toggle scoreboard on when HP values are no longer valid
-    val p1hp = getMemData(MemData("p1hp", 0x01B18C78L, listOf(0x9CCL))).dataInt
-    val p2hp = getMemData(MemData("p2hp", 0x01B18C7CL, listOf(0x9CCL))).dataInt
+    val p1hp = getMemData(MemData("Player 1 HP", longArrayOf(0x01B18C78L, 0x9CCL), 4)).data
+    val p2hp = getMemData(MemData("Player 2 HP", longArrayOf(0x01B18C7CL, 0x9CCL), 4)).data
     if (p1hp >= 0 && p1hp <= 420 && p2hp >= 0 && p2hp <= 420) {
         if (showhud && !forcehud) {
             wasSwitched = true

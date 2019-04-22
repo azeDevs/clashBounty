@@ -1,6 +1,7 @@
 package classes
 
 import classes.Character.getCharacterName
+import kotlin.math.abs
 
 class Player(playerData: PlayerData) {
 
@@ -42,7 +43,7 @@ class Player(playerData: PlayerData) {
 
     fun getChangeString(): String {
         if (change > 0) return "+${addCommas(change.toString())} W$\n "
-        else if (change < 0) return " \n${addCommas(change.toString())} W$"
+        else if (change < 0) return " \n-${addCommas(abs(change).toString())} W$"
         else return " \n "
     }
 
