@@ -48,7 +48,7 @@ fun displayAppWindow() = appWindow("gearNet", 600, 400) {
                             guiApi.get(i).record = textfield { readonly = true; value = ""; enabled = false; padded = false  }
                             guiApi.get(i).bounty = textfield { readonly = true; value = ""; enabled = false; padded = false }
                             guiApi.get(i).rating = textfield { readonly = true; value = ""; enabled = false; padded = false }
-                            guiApi.get(i).status = textfield { readonly = true; value = ""; enabled = false; padded = false  }
+                            guiApi.get(i).status = textfield { readonly = true; value = ""; enabled = false; padded = false; visible = false }
                         }
                     }
                 }
@@ -147,7 +147,7 @@ private val IC_INFO = "◆ "
 private val IC_BOOL = "◑ "
 private val IC_FUNC = "▶ "
 private val IC_WARN = "\uD83D\uDCA3 "
-fun logInfo(text: String) = addLog("$IC_INFO $text\n")
+fun logInfo(text: String) = addLog("$IC_INFO $text")
 fun logFunc(text: String) = IC_INFO //addLog("\n$IC_FUNC $text")
 fun logWarn(text: String) = IC_INFO //addLog("\n$IC_WARN $text")
 fun logBool(text: String, bool: Boolean): Boolean {
@@ -155,5 +155,5 @@ fun logBool(text: String, bool: Boolean): Boolean {
     return bool
 }
 private fun addLog(logText: String) {
-    debugScroll.append(logText.trimMargin())
+    debugScroll.value = "${debugScroll.value}\n${logText}"
 }

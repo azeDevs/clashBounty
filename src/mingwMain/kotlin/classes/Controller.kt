@@ -6,7 +6,7 @@ import classes.showhud
 import classes.writeToFile
 
 fun writeLobbyFiles(players: List<Player>) {
-    for (i in 0..3) if (players.size > i && players.get(i).getBounty() > 0 && logBool("showhud", showhud)) {
+    for (i in 0..3) if (players.size > i && players.get(i).getBounty() > 0 && players[i].idle<10 && logBool("showhud", showhud)) {
         val remote = "${getPlaceString(i+1)}\n" +
                 "Backdrop:\n" +
                 "${getFullscreen(true)}\n" +

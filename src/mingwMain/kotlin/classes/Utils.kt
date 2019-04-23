@@ -1,15 +1,22 @@
 package classes
 
 import kotlinx.cinterop.CPointer
-import platform.posix.FILE
-import platform.posix.fclose
-import platform.posix.fopen
-import platform.posix.fprintf
+import platform.posix.*
+import platform.windows.ReadFile
 
 fun writeToFile(fileName: String, text: String) {
     val fp: CPointer<FILE>? = fopen("${fileName}.txt" ,"w+")
     fprintf(fp, "$text")
     fclose(fp)
+}
+
+fun readFromFile(fileName: String):String {
+    var message = CharArray(1024)
+    var fp: CPointer<FILE>? = fopen("${fileName}.txt", "r+")
+    rewind(fp)
+//    fscanf(fp,"%s", message)
+    fclose(fp)
+    return message.toString()
 }
 
 fun truncate(name: String, length: Int): String {

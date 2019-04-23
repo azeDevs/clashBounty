@@ -6,9 +6,26 @@ import kotlin.math.abs
 class Player(playerData: PlayerData) {
 
     private var bounty = 0
-    private var chain = 0
     private var change = 0
+    private var chain = 0
+    var idle = 0
+    private var legacy = Legacy(playerData.steamUserId)
     private var data = Pair(playerData,playerData)
+
+//            private var legacy = "#13243546$120200w18m24!"
+//            steamId | bounty | wins | matches
+//
+//            val steamId = Regex("(?<=\#)(\d+)").find(legacy).toLong()
+//            val bounty =  Regex("(?<=\$)(\d+)").find(legacy).toLong()
+//            val chain =   Regex("(?<=c)(\d+)").find(legacy).toLong()
+//            val wins =    Regex("(?<=w)(\d+)").find(legacy).toLong()
+//            val matches = Regex("(?<=m)(\d+)").find(legacy).toLong()
+//            val present = Regex("(?<=p)(\d+)").find(legacy).toLong()
+//            val existed = Regex("(?<=e)(\d+)").find(legacy).toLong()
+
+    fun updateLegacy() {
+        var legastr = "#${data.second.steamUserId}$${bounty}w${data.second.matchesWon}m${data.second.matchesTotal}!"
+    }
 
     private fun oldData() = data.first
     fun getData() = data.second
@@ -22,8 +39,6 @@ class Player(playerData: PlayerData) {
     fun getNameString() = "${getDisplayName()}  -  [ Steam ID: ${getSteamId()} ]"
 
     fun getSteamId() = getData().steamUserId
-
-    fun getCharacterId() = getData().characterId
 
     fun getCharacter(shortened:Boolean) = getCharacterName(getData().characterId, shortened)
 
@@ -96,4 +111,13 @@ class Player(playerData: PlayerData) {
 
     fun getRatingString() = "Risk Rating: ${getRatingLetter()}"
 
+    class Legacy(val steamId:Long) {
+        var bounty:Int = -1
+        var games:Int = -1
+        var wins:Int = -1
+        var rating:Float = -1.0f
+        var dataStr:String = "!"
+    }
+
 }
+

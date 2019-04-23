@@ -59,7 +59,7 @@ fun getMemData(memData:MemData): MemData {
     while(Module32Next(hSnap, mod.ptr) != 0){
         if (procname.equals(mod.szModule.toKString())) {
             CloseHandle(hSnap)
-            dataPointer = (mod.modBaseAddr.toLong() + memData.offsets[0]).toCPointer<ByteVar>()
+            dataPointer = (mod.modBaseAddr.toLong() + memData.offsets[0]).toCPointer()
             var offsetlist = memData.offsets.drop(1)
             while (offsetlist.size > 0) {
                 var buffer = nativeHeap.alloc<UIntVar>()
