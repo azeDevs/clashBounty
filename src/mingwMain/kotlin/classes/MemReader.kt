@@ -22,7 +22,7 @@ class MemReader : XrdApi {
         var pid: UInt = 0u
         if (Process32First(snap, pe32.ptr) == 0) {
             logWarn("Process32First failed!")
-            return logBool("isXrdRunning", false)
+            return false
         }
         while (Process32Next(snap, pe32.ptr) != 0) {
             val entryname = pe32.szExeFile.toKString()
@@ -32,11 +32,10 @@ class MemReader : XrdApi {
             }
         }
         CloseHandle(snap)
-        return logBool("isXrdRunning", pid != 0u)
+        return pid != 0u
     }
 
     override fun connectToXrd() : Boolean {
-        logFunc("connectToXrd")
         val procname = "GuiltyGearXrd.exe"
         var snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)
         val pe32size: UInt = sizeOf<PROCESSENTRY32>().toUInt()
@@ -46,7 +45,7 @@ class MemReader : XrdApi {
         var pid : UInt = 0u
         if (Process32First(snap, pe32.ptr) == 0) {
             logWarn("Process32First failed!")
-            return logBool("Process32First != 0", Process32First(snap, pe32.ptr) != 0)
+            return Process32First(snap, pe32.ptr) != 0
         }
         while (Process32Next(snap, pe32.ptr) != 0) {
             val entryname = pe32.szExeFile.toKString()
@@ -58,28 +57,27 @@ class MemReader : XrdApi {
         CloseHandle(snap)
         if (pid == 0u) {
             logWarn("$procname not open!")
-            return logBool("pid != 0u", pid != 0u)
+            return pid != 0u
         } else {
             println("$procname has an id of $pid")
         }
         phandle = OpenProcess(PROC_ALL_ACCESS, 0, pid)
         if (phandle == null) {
             logWarn("$procname failed to open.")
-            return logBool("phandle != null", phandle != null)
+            return phandle != null
         } else {
             println("$procname was opened!")
         }
         infoAddr = getDataAddr(pid, "GuiltyGearXrd.exe", phandle)
         if(infoAddr?.toLong() == 0L) {
             logWarn("Failed to find Lobby")
-            return logBool("infoAddr?.toLong() != 0L", infoAddr?.toLong() != 0L)
+            return infoAddr?.toLong() != 0L
         }
         println("Lobby Data Address: " + infoAddr.toLong().toString(16))
         return true
     }
 
     private fun getDataAddr(pid : UInt, modulename : String, pHandle : CPointer<out CPointed>?): CPointer<ByteVar>? {
-        logFunc("getDataAddr")
         var mod = nativeHeap.alloc<MODULEENTRY32>()
         mod.dwSize = sizeOf<MODULEENTRY32>().toUInt()
         var hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pid)
@@ -107,14 +105,11 @@ class MemReader : XrdApi {
     }
 
     override fun isXrdConnected(): Boolean {
-        logFunc("isXrdConnected")
-        val connected = (logBool("infoAddr != null", infoAddr != null) &&
-                logBool("infoAddr.equals(CPointer)", !infoAddr!!.equals(0L.toCPointer<ByteVar>())))
-        return logBool("isXrdConnected", connected)
+        val connected = (infoAddr != null) && !infoAddr!!.equals(0L.toCPointer<ByteVar>())
+        return connected
     }
 
     override fun getXrdData(): Set<PlayerData> {
-        logFunc("getXrdData")
         if (!isXrdConnected()) return emptySet()
 
         var playerDataSet = HashSet<PlayerData>()

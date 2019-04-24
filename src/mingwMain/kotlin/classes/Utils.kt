@@ -1,6 +1,6 @@
 package classes
 
-import kotlinx.cinterop.CPointer
+import kotlinx.cinterop.*
 import platform.posix.*
 import platform.windows.ReadFile
 
@@ -11,12 +11,17 @@ fun writeToFile(fileName: String, text: String) {
 }
 
 fun readFromFile(fileName: String):String {
-    var message = CharArray(1024)
-    var fp: CPointer<FILE>? = fopen("${fileName}.txt", "r+")
+    var fp = fopen("${fileName}.txt", "r+")
+    fseek(fp, 0, SEEK_END)
+    val lengthoffile = ftell(fp)
     rewind(fp)
-//    fscanf(fp,"%s", message)
-    fclose(fp)
-    return message.toString()
+    var filebuffer = nativeHeap.allocArray<ByteVar>(lengthoffile)
+    var contents: String
+    try {
+        contents = fgets(filebuffer, lengthoffile, fp)!!.toKString()
+        if(contents == null || contents.isEmpty()) logInfo("Error reading ${fileName}.txt")
+    } finally { fclose(fp) }
+    return contents
 }
 
 fun truncate(name: String, length: Int): String {

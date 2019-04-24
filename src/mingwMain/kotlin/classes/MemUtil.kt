@@ -19,10 +19,11 @@ import platform.windows.ReadProcessMemory
 
 class MemData(val description:String, val offsets : LongArray, val varSize : Int) { var data : Long = -1L }
 
-val ML = arrayOf(
+val MemLibrary = arrayOf(
     MemData("Player 1 HP", longArrayOf(0x01B18C78L, 0x9CCL), 4),
     MemData("Player 2 HP", longArrayOf(0x01B18C7CL, 0x9CCL), 4),
-    MemData("Match Timer", longArrayOf(0x0177A8ACL, 0x708L, 0x4CL, 0x450L), 4)
+    MemData("Match Timer 1", longArrayOf(0x0177A8ACL, 0x708L, 0x4CL, 0x450L), 4),
+    MemData("Match Timer 2", longArrayOf(0x0177A8ACL, 0x708L, 0xD4L, 0x4CL, 0x450L), 4)
 )
 
 fun getMemData(memData:MemData): MemData {
@@ -50,7 +51,7 @@ fun getMemData(memData:MemData): MemData {
     phandle = OpenProcess(PROC_ALL_ACCESS, 0, pid)
 
 
-    logFunc("getDataAddr")
+    // getDataAddr
     var mod = nativeHeap.alloc<MODULEENTRY32>()
     mod.dwSize = sizeOf<MODULEENTRY32>().toUInt()
     var hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pid)
@@ -76,7 +77,7 @@ fun getMemData(memData:MemData): MemData {
         }
     }
 
-    logFunc("getXrdData")
+    // getXrdData
     if (!(dataPointer != null && !dataPointer!!.equals(0L.toCPointer<ByteVar>()))) return memData
     var buffer = nativeHeap.allocArray<ByteVar>(memData.varSize)
     var bytesread = nativeHeap.alloc<ULongVar>()

@@ -13,7 +13,7 @@ private var guiApi: MutableList<PlayerGui> = ArrayList()
 private var dataFields: MutableList<DataGui> = ArrayList()
 
 lateinit private var debugButton: Button
-lateinit private var debugScroll: TextArea
+lateinit private var logScroll: TextArea
 var showhud = true
 var forcehud = false
 
@@ -30,13 +30,13 @@ fun displayAppWindow() = appWindow("gearNet", 600, 400) {
                     writeLobbyFiles(session.getAll())
                 }
             }
-            for (i in 0..ML.size-1) {
+            for (i in 0..MemLibrary.size-1) {
                 dataFields.add(DataGui())
-                dataFields.get(i).dataSource = ML.get(i)
-                dataFields.get(i).dataField = textfield { readonly = true; value = "${ML.get(i).description}:"; enabled = false; padded = false }
+                dataFields.get(i).dataSource = MemLibrary.get(i)
+                dataFields.get(i).dataField = textfield { readonly = true; value = "${MemLibrary.get(i).description}:"; enabled = false; padded = false }
             }
 
-            debugScroll = textarea(true) { readonly = true; stretchy = true; }
+            logScroll = textarea(true) { readonly = true; stretchy = true; }
         }
         vbox { stretchy = true
             for (i in 0..7) {
@@ -48,7 +48,7 @@ fun displayAppWindow() = appWindow("gearNet", 600, 400) {
                             guiApi.get(i).record = textfield { readonly = true; value = ""; enabled = false; padded = false  }
                             guiApi.get(i).bounty = textfield { readonly = true; value = ""; enabled = false; padded = false }
                             guiApi.get(i).rating = textfield { readonly = true; value = ""; enabled = false; padded = false }
-                            guiApi.get(i).status = textfield { readonly = true; value = ""; enabled = false; padded = false; visible = false }
+                            guiApi.get(i).status = textfield { readonly = true; value = ""; enabled = false; padded = false }
                         }
                     }
                 }
@@ -75,7 +75,7 @@ fun displayAppWindow() = appWindow("gearNet", 600, 400) {
 private fun solveForShowHud(): Boolean {
     var wasSwitched = false
 
-    for (i in 0..ML.size-1) dataFields.get(i).dataField.value = "${dataFields.get(i).dataSource.description}: ${getMemData(dataFields.get(i).dataSource).data}"
+    for (i in 0..MemLibrary.size-1) dataFields.get(i).dataField.value = "${dataFields.get(i).dataSource.description}: ${getMemData(dataFields.get(i).dataSource).data}"
 
     // Toggle scoreboard on when HP values are no longer valid
     val p1hp = getMemData(MemData("Player 1 HP", longArrayOf(0x01B18C78L, 0x9CCL), 4)).data
@@ -107,11 +107,20 @@ private fun updateAppUi(uiUpdate: List<Player>) {
             if (!guiApi.get(i).bounty.value.equals(player.getBountyString())) guiApi.get(i).bounty.value = player.getBountyString()
             if (!guiApi.get(i).rating.value.equals(player.getRatingString())) guiApi.get(i).rating.value = player.getRatingString()
             if (!guiApi.get(i).status.value.equals(player.getStatusString())) guiApi.get(i).status.value = player.getStatusString()
-            guiApi.get(i).character.enabled = true
-            guiApi.get(i).record.enabled = true
-            guiApi.get(i).bounty.enabled = true
-            guiApi.get(i).rating.enabled = true
-            guiApi.get(i).status.enabled = true
+
+            if (player.isScoreboardWorthy()) {
+                guiApi.get(i).character.enabled = true
+                guiApi.get(i).record.enabled = true
+                guiApi.get(i).bounty.enabled = true
+                guiApi.get(i).rating.enabled = true
+                guiApi.get(i).status.enabled = true
+            } else {
+                guiApi.get(i).character.enabled = false
+                guiApi.get(i).record.enabled = false
+                guiApi.get(i).bounty.enabled = false
+                guiApi.get(i).rating.enabled = false
+                guiApi.get(i).status.enabled = false
+            }
         } else {
             guiApi.get(i).playerGroup.title = ""
             guiApi.get(i).character.value = ""
@@ -143,17 +152,6 @@ class DataGui {
     lateinit var dataField: TextField
 }
 
-private val IC_INFO = "◆ "
-private val IC_BOOL = "◑ "
-private val IC_FUNC = "▶ "
-private val IC_WARN = "\uD83D\uDCA3 "
-fun logInfo(text: String) = addLog("$IC_INFO $text")
-fun logFunc(text: String) = IC_INFO //addLog("\n$IC_FUNC $text")
-fun logWarn(text: String) = IC_INFO //addLog("\n$IC_WARN $text")
-fun logBool(text: String, bool: Boolean): Boolean {
-//    addLog("\n$IC_BOOL $text: ${bool}");
-    return bool
-}
-private fun addLog(logText: String) {
-    debugScroll.value = "${debugScroll.value}\n${logText}"
-}
+fun logInfo(text: String) = addLog("◆ $text")
+fun logWarn(text: String) = addLog("▶ $text")
+private fun addLog(logText: String) { logScroll.value = "${logScroll.value}\n${logText}" }

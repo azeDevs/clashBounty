@@ -1,6 +1,7 @@
 package classes
 
 import classes.Character.getCharacterName
+import classes.libui.data
 import kotlin.math.abs
 
 class Player(playerData: PlayerData) {
@@ -8,24 +9,8 @@ class Player(playerData: PlayerData) {
     private var bounty = 0
     private var change = 0
     private var chain = 0
-    var idle = 0
-    private var legacy = Legacy(playerData.steamUserId)
+    private var idle = 0
     private var data = Pair(playerData,playerData)
-
-//            private var legacy = "#13243546$120200w18m24!"
-//            steamId | bounty | wins | matches
-//
-//            val steamId = Regex("(?<=\#)(\d+)").find(legacy).toLong()
-//            val bounty =  Regex("(?<=\$)(\d+)").find(legacy).toLong()
-//            val chain =   Regex("(?<=c)(\d+)").find(legacy).toLong()
-//            val wins =    Regex("(?<=w)(\d+)").find(legacy).toLong()
-//            val matches = Regex("(?<=m)(\d+)").find(legacy).toLong()
-//            val present = Regex("(?<=p)(\d+)").find(legacy).toLong()
-//            val existed = Regex("(?<=e)(\d+)").find(legacy).toLong()
-
-    fun updateLegacy() {
-        var legastr = "#${data.second.steamUserId}$${bounty}w${data.second.matchesWon}m${data.second.matchesTotal}!"
-    }
 
     private fun oldData() = data.first
     fun getData() = data.second
@@ -42,6 +27,8 @@ class Player(playerData: PlayerData) {
 
     fun getCharacter(shortened:Boolean) = getCharacterName(getData().characterId, shortened)
 
+    fun isScoreboardWorthy() = getBounty() > 0 && idle > 0 && getMatchesWon() > 0
+
     fun getBounty() = bounty
 
     fun getBountyFormatted() = "${addCommas(getBounty().toString())} W$"
@@ -50,7 +37,10 @@ class Player(playerData: PlayerData) {
 
     fun getChain() = chain
 
+    fun isIdle() = idle == 0 || --idle == 0
+
     fun changeChain(amount:Int) {
+        idle = MAX_IDLE
         chain += amount
         if (chain < 0) chain = 0
         if (chain > 8) chain = 8
@@ -66,15 +56,13 @@ class Player(playerData: PlayerData) {
 
     fun getMatchesPlayed() = getData().matchesTotal
 
-    fun getRecordString() = "C:${getChain()}  /  W:${getMatchesWon()}  /  M:${getMatchesPlayed()}"
+    fun getRecordString() = "Chain: ${getChain()}  [ W:${getMatchesWon()} / M:${getMatchesPlayed()} ]"
 
     fun getLoadPercent() = getData().loadingPct
 
-    fun getStatusString(): String {
-        if (getLoadPercent() == 0) return "Standby: ${getLoadPercent()}%"
-        else if (getLoadPercent() == 100) return "Standby: ${getLoadPercent()}%"
-        else return "Loading: ${getLoadPercent()}%"
-    }
+    val MAX_IDLE = 8
+    fun getStatusString() = if (idle == 0) "Idle: ${idle}   [${getLoadPercent()}%]" else "Standby: ${idle}  [${getLoadPercent()}%]"
+
 
     fun justPlayed() = getData().matchesTotal > oldData().matchesTotal
 
@@ -110,14 +98,6 @@ class Player(playerData: PlayerData) {
     }
 
     fun getRatingString() = "Risk Rating: ${getRatingLetter()}"
-
-    class Legacy(val steamId:Long) {
-        var bounty:Int = -1
-        var games:Int = -1
-        var wins:Int = -1
-        var rating:Float = -1.0f
-        var dataStr:String = "!"
-    }
 
 }
 
