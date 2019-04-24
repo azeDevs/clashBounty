@@ -73,7 +73,7 @@ class Player(playerData: PlayerData) {
     fun changeBounty(amount:Int) {
         change = amount
         bounty += amount
-        if (bounty<0) bounty = 0
+        if (bounty < 0) bounty = 0
     }
 
     fun getRating() = (getMatchesWon() + getChain()).toFloat() / (getMatchesPlayed() - getChain()).toFloat()

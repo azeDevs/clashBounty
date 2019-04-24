@@ -67,7 +67,7 @@ fun displayAppWindow() = appWindow("gearNet", 600, 400) {
                 }
             } else setAppStatus("DISCONNECTED ❌")
         }
-        title = "gearNet - $statusText ${session.getUpdateCounter()}"
+        title = "gearNet - $statusText ${session.getGamesCount()} ${session.getUpdateCounter()}"
         true
     }
 }
